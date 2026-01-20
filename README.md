@@ -224,6 +224,36 @@ We welcome contributions! Here's how to get started:
 - `ws://localhost:8000/ws/game/?game_id={id}&mode={mode}&username={user}`
   - `mode`: `create`, `join`, `quick`, `rejoin`
   - `play_as`: `tiger` or `goat` (optional)
+ 
+### Google OAuth Authentication
+
+This project supports authentication using Google OAuth.
+
+#### Environment Variable
+
+* `GOOGLE_CLIENT_ID` (required): Google OAuth client ID from Google Cloud Console.
+
+#### API Endpoint
+
+* **URL:** `/api/auth/google`
+* **Method:** `GET`
+
+#### Description
+
+Initiates the Google OAuth login flow. Redirects the user to Google for authentication and then back to the application after successful login.
+
+#### Request
+
+* No request body required.
+
+#### Usage
+
+```http
+GET /api/auth/google
+```
+
+This section helps developers quickly understand and integrate Google OAuth authentication.
+
 
 ## 📄 License
 
