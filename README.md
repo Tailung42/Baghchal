@@ -219,6 +219,32 @@ We welcome contributions! Here's how to get started:
 - `POST /login/` - User authentication
 - `GET /` - API health check
 
+## 🔐 Google OAuth Authentication
+
+The backend supports authentication using Google OAuth.  
+This endpoint handles both **login and signup automatically** based on the user's email.
+
+### Endpoint
+
+- **URL:** `/google-auth/`
+- **Method:** `POST`
+
+### Request Body
+
+```json
+{
+  "token": "<google_id_token>"
+}
+```
+
+### Environment Variables
+
+The following environment variable is required for Google OAuth authentication:
+
+```env
+GOOGLE_CLIENT_ID=_your_google_client_id_
+```
+
 ### WebSocket
 
 - `ws://localhost:8000/ws/game/?game_id={id}&mode={mode}&username={user}`
