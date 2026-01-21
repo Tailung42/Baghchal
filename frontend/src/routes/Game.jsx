@@ -4,7 +4,7 @@ import Board from "../components/Board";
 import { useParams, useNavigate, useBlocker } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import useSound from "use-sound";
-import moveSound from "../assets/move_sound.mp3";
+import moveSound from "../assets/new_move_sound.mp3";
 import PlayerCard from "../components/PlayerCard";
 import GameStatusIndicator from "../components/GameStatusIndicator";
 import BaseModal from "../components/ui/BaseModal";
