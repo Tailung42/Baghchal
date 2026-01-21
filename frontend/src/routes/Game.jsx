@@ -5,6 +5,7 @@ import { useParams, useNavigate, useBlocker } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import useSound from "use-sound";
 import moveSound from "../assets/new_move_sound.mp3";
+import captureSound from "../assets/capture_sound.wav";
 import PlayerCard from "../components/PlayerCard";
 import GameStatusIndicator from "../components/GameStatusIndicator";
 import BaseModal from "../components/ui/BaseModal";
@@ -18,6 +19,7 @@ const Game = () => {
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [playMoveSound] = useSound(moveSound);
+  const [playCaptureSound] = useSound(captureSound);
 
   let { gameId } = useParams();
   gameId = gameId.replace("game_", "");
@@ -70,13 +72,17 @@ const Game = () => {
       gameState.newPosition &&
       gameState.newPosition != gameState.oldPositiion
     ) {
-      playMoveSound();
+      if (gameState.isCapture === true) {
+        playCaptureSound();
+      } else {
+        playMoveSound();
+      }
     }
     if (gameState.status === "over") {
       setWinner(gameState.winner);
       setModalOpen(true);
     }
-  }, [gameState, gameId, isConnected, connect, playMoveSound]);
+  }, [gameState, gameId, isConnected, connect, playMoveSound, playCaptureSound]);
 
   useEffect(() => {
     if (!(auth.user || auth.guestId)) {
