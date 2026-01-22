@@ -15,6 +15,7 @@ def get_initial_game_state():
         "winner": None,  # can be goat or tiger
         "newPosition": "",
         "previousPosition": "",
+        "isCaptured": False,
         "player": {
             "goat": "",  # username
             "tiger": "",  # username
@@ -37,6 +38,8 @@ def update_game_state(room_name, move):
         return None
 
     # update board with the move
+    game_state["isCaptured"] = False
+
     if move_type == "place":
         board[to_key] = "goat"
         game_state["unusedGoat"] -= 1
@@ -54,6 +57,7 @@ def update_game_state(room_name, move):
         if board.get(mid_key) == "goat":
             board.pop(mid_key)
             game_state["deadGoatCount"] += 1
+            game_state["isCaptured"] = True
 
     # add move to the history
     user_from = to_user_coord(from_key)
