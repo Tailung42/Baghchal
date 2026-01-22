@@ -3,7 +3,7 @@ import { useWebSocket } from "../context/WebSocketContext";
 import PrimaryButton from "../components/ui/PrimaryButton";
 import SecondaryButton from "../components/ui/SecondaryButton";
 import BaseModal from "../components/ui/BaseModal";
-import board from "../assets/board.png";
+import board from "../assets/images/board.png";
 
 export default function Home() {
   const [gameModalOpen, setGameModalOpen] = useState(false);

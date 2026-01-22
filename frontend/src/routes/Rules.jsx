@@ -1,4 +1,4 @@
-import board from "../assets/board.png";
+import board from "../assets/images/board.png";
 
 const Rules = () => {
   return (

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import goat from "../assets/goat.png";
-import tiger from "../assets/tiger.png";
+import goat from "../assets/images/goat.png";
+import tiger from "../assets/images/tiger.png";
 
 const Piece = ({
   x,
