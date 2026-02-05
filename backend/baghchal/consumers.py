@@ -57,6 +57,7 @@ class GameConsumer(WebsocketConsumer):
             if not hasattr(self, "room_group_name"):
                 print("Error: No room group name set")
                 return
+            
             # remove user from game if exit game received
             if message["type"] == "exitGame":
                 print(f"{self.username} exited the game")
@@ -66,9 +67,13 @@ class GameConsumer(WebsocketConsumer):
                         gamestate["player"][role] = ""
 
             # TODO: inform other player that opponent has left the game
+
+            # apply the new move 
             elif message["type"] == "newMove":
                 move = message["move"]
                 new_game_state = update_game_state(self.room_group_name, move)
+
+                # send error message for invaid move
                 if not new_game_state:
                     self.send(
                         text_data=json.dumps(
@@ -76,6 +81,7 @@ class GameConsumer(WebsocketConsumer):
                         )
                     )
                     return
+                    
                 # Broadcast updated state to all players in the game
                 event = {"type": "send_game_state", "game_state": new_game_state}
                 async_to_sync(self.channel_layer.group_send)(
@@ -108,13 +114,11 @@ class GameConsumer(WebsocketConsumer):
         # Validate connection parameters
         if not self.username:
             raise ValueError("Error: Username not  provided")
-        # Validate connection parameters
         if not self.mode:
             raise ValueError("Error: No mode specified")
-
         if self.mode != "quick" and not self.game_id:
             raise ValueError("Error: Invalid game ID for non-quick mode")
-
+            
         self.accept()
         print("WebSocket connection accepted")
 

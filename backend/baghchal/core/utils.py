@@ -214,8 +214,6 @@ def cleanup_game_states(game_states):
         # Remove finished games after delay
         # TODO: store the game to the database
         if game_state.get("status") == "over":
-            #  dont call this fuction now, can't handle guest user
-            # store_game(game_id, game_state)
             schedule_game_removal(game_states, game_id, 30)
 
         # Remove truly abandoned games (no players at all)
