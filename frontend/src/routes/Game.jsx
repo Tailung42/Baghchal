@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useWebSocket } from "../context/WebSocketContext";
 import Board from "../components/Board";
-import { useParams, useNavigate, useBlocker } from "react-router-dom";
+import { useParams, useNavigate, useBlocker, replace } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import useSound from "use-sound";
 import moveSound from "../assets/sounds/move_sound.mp3";
@@ -94,7 +94,7 @@ const Game = () => {
 
   useEffect(() => {
     if (!(auth.user || auth.guestId)) {
-      navigate("/");
+      navigate("/", (replace = true));
     }
   }, [auth, navigate]);
 
@@ -119,7 +119,7 @@ const Game = () => {
       setPendingNavigation(null);
     }
   };
-
+  k;
   const handleLeaveCancel = () => {
     setShowLeaveConfirmation(false);
     if (blocker.state === "blocked") {
