@@ -1,5 +1,5 @@
 import threading
-from .gameState import get_game, set_game, get_all_games, delete_game
+from .redis import get_game, set_game, get_all_games, delete_game
 from baghchal.models import Game
 
 

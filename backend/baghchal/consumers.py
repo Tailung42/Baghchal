@@ -3,14 +3,14 @@ import json
 from asgiref.sync import async_to_sync
 from urllib.parse import parse_qs
 
-from .core.gameState import (
+from .redis import (
     get_game,
     set_game,
     delete_game,
     get_all_games,
     game_exists,
 )
-from .core.utils import get_initial_game_state, update_game_state, cleanup_game_states
+from .utils import get_initial_game_state, update_game_state, cleanup_game_states
 import random
 import uuid
 
