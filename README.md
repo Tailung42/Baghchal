@@ -94,7 +94,7 @@ After all 20 goats are placed, goats can now move
 Both players move strategically to achieve their win condition
 
 **Winnng:**
-Tigers win: Capture 5 goats    
+Tigers win: Capture 5 goats  
 Goats win: Block all tiger movements
 
 **For detailed rules, [visit the in-game Rules page](https://baghchal-2srv.onrender.com/rules)**
@@ -205,81 +205,14 @@ We welcome contributions! Here's how to get started:
 7. **Sync your Fork with main repo**
 8. **Open a Pull Request**
 
-### Areas for Contribution
+### Future Direction
 
+- [ ] Chat in the game feature, may be voice chat?
 - [ ] Game statistics and leaderboards
 - [ ] AI opponent (minimax preferably)
-- [ ] Sound effects and animations
-- [ ] Spectator mode
-- [ ] Game replay functionality
-
-### HTTP Endpoints
-
-- `POST /signup/` - User registration
-- `POST /login/` - User authentication
-- `GET /` - API health check
-
-## 🔐 Google OAuth Authentication
-
-The backend supports authentication using Google OAuth.  
-This endpoint handles both **login and signup automatically** based on the user's email.
-
-### Endpoint
-
-- **URL:** `/google-auth/`
-- **Method:** `POST`
-
-### Request Body
-
-```json
-{
-  "token": "<google_id_token>"
-}
-```
-
-### Environment Variables
-
-The following environment variable is required for Google OAuth authentication:
-
-```env
-GOOGLE_CLIENT_ID=_your_google_client_id_
-```
-
-### WebSocket
-
-- `ws://localhost:8000/ws/game/?game_id={id}&mode={mode}&username={user}`
-  - `mode`: `create`, `join`, `quick`, `rejoin`
-  - `play_as`: `tiger` or `goat` (optional)
- 
-### Google OAuth Authentication
-
-This project supports authentication using Google OAuth.
-
-#### Environment Variable
-
-* `GOOGLE_CLIENT_ID` (required): Google OAuth client ID from Google Cloud Console.
-
-#### API Endpoint
-
-* **URL:** `/api/auth/google`
-* **Method:** `GET`
-
-#### Description
-
-Initiates the Google OAuth login flow. Redirects the user to Google for authentication and then back to the application after successful login.
-
-#### Request
-
-* No request body required.
-
-#### Usage
-
-```http
-GET /api/auth/google
-```
-
-This section helps developers quickly understand and integrate Google OAuth authentication.
-
+- [ ] sliding animations
+- [ ] Spectator mode?
+- [ ] Game replay functionality?
 
 ## 📄 License
 
