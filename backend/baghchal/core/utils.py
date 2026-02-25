@@ -1,5 +1,5 @@
 import threading
-from .gameState import game_states
+from .gameState import get_game, set_game, get_all_games, delete_game
 from baghchal.models import Game
 
 
@@ -26,7 +26,10 @@ def get_initial_game_state():
 
 def update_game_state(room_name, move):
     """applies the move to the game state of id :room_name if the move is valid"""
-    game_state = game_states[room_name]
+    game_state = get_game(room_name)
+    if not game_state:
+        return None
+        
     board = game_state["board"]
 
     current_player = game_state["currentPlayer"]
@@ -76,6 +79,9 @@ def update_game_state(room_name, move):
     game_state["previousPosition"] = from_key
 
     check_game_over(game_state)
+    
+    # Save the updated state back to Redis
+    set_game(room_name, game_state)
 
     return game_state
 
@@ -208,17 +214,18 @@ def can_capture(pos, board):
     return False
 
 
-def cleanup_game_states(game_states):
-    """Removes completed or abandoned games from game_states"""
-    for game_id, game_state in list(game_states.items()):
+def cleanup_game_states():
+    """Removes completed or abandoned games from Redis"""
+    games = get_all_games()
+    for game_id, game_state in games.items():
         # Remove finished games after delay
         # TODO: store the game to the database
         if game_state.get("status") == "over":
-            schedule_game_removal(game_states, game_id, 30)
+            schedule_game_removal(game_id, 30)
 
         # Remove truly abandoned games (no players at all)
         elif not any(game_state.get("player", {}).values()):
-            schedule_game_removal(game_states, game_id)
+            schedule_game_removal(game_id)
 
         # one player left during ongoing game
         elif game_state.get("status") == "ongoing":
@@ -228,12 +235,13 @@ def cleanup_game_states(game_states):
                 pass
 
 
-def schedule_game_removal(game_states, game_id, delay=0):
+def schedule_game_removal(game_id, delay=0):
+    """Schedule a game for removal from Redis after delay seconds"""
     def remove_game():
         print("Removing Game: ", game_id)
-        game_states.pop(game_id, None)
+        delete_game(game_id)
 
-    # ? may be using different times for different condition is better
+    # Run deletion in background thread
     timer = threading.Timer(delay, remove_game)
     timer.daemon = True
     timer.start()

@@ -3,8 +3,13 @@ import json
 from asgiref.sync import async_to_sync
 from urllib.parse import parse_qs
 
-# from .utils import is_valid_uuid
-from .core.gameState import game_states
+from .core.gameState import (
+    get_game,
+    set_game,
+    delete_game,
+    get_all_games,
+    game_exists,
+)
 from .core.utils import get_initial_game_state, update_game_state, cleanup_game_states
 import random
 import uuid
@@ -27,7 +32,7 @@ class Mode:
 class GameConsumer(WebsocketConsumer):
     def connect(self):
         # store completed game and remove abandoned ones
-        cleanup_game_states(game_states)
+        cleanup_game_states()
 
         # get connection paameters for game
         query = parse_qs(self.scope["query_string"].decode())
@@ -63,10 +68,12 @@ class GameConsumer(WebsocketConsumer):
             # remove user from game if exit game received
             if message["type"] == "exitGame":
                 print(f"{self.username} exited the game")
-                gamestate = game_states[self.room_group_name]
-                for role, player in gamestate["player"].items():
-                    if player == self.username:
-                        gamestate["player"][role] = ""
+                gamestate = get_game(self.room_group_name)
+                if gamestate:
+                    for role, player in gamestate["player"].items():
+                        if player == self.username:
+                            gamestate["player"][role] = ""
+                    set_game(self.room_group_name, gamestate)
 
             # TODO: inform other player that opponent has left the game
 
@@ -129,14 +136,14 @@ class GameConsumer(WebsocketConsumer):
         if self.mode == Mode.CREATE:
             # Set room group name for create mode
             self.room_group_name = f"game_{self.game_id}"
-            if self.room_group_name in game_states:
+            if game_exists(self.room_group_name):
                 raise ValueError("Error: Game already exists")
-            game_states[self.room_group_name] = get_initial_game_state()
+            set_game(self.room_group_name, get_initial_game_state())
             print(f"Created new game: {self.room_group_name}")
 
         elif self.mode == Mode.JOIN:
             self.room_group_name = f"game_{self.game_id}"
-            game_state = game_states.get(self.room_group_name)
+            game_state = get_game(self.room_group_name)
 
             if not game_state:
                 raise ValueError("No Game available for joining")
@@ -154,9 +161,10 @@ class GameConsumer(WebsocketConsumer):
 
         elif self.mode == Mode.QUICK:
             # get a list of games whose status is waiting
+            all_games = get_all_games()
             waiting_games = [
                 (game_id, game_state)
-                for game_id, game_state in game_states.items()
+                for game_id, game_state in all_games.items()
                 if game_state.get("status") == GameStatus.WAITING
             ]
 
@@ -167,7 +175,7 @@ class GameConsumer(WebsocketConsumer):
                 # Create new game for quick mode
                 new_game_id = str(uuid.uuid4())[:GAME_ID_LENGTH]
                 self.room_group_name = f"game_{new_game_id}"
-                game_states[self.room_group_name] = get_initial_game_state()
+                set_game(self.room_group_name, get_initial_game_state())
                 print(f"Created new quick game: {self.room_group_name}")
 
         # Join room group
@@ -180,7 +188,10 @@ class GameConsumer(WebsocketConsumer):
     def send_initial_game_state(self):
         # Send initial game state to the connected player
         try:
-            initial_state = game_states[self.room_group_name]
+            initial_state = get_game(self.room_group_name)
+            if not initial_state:
+                raise ValueError("Game state not found")
+                
             # add game_id of the game inside itself
             initial_state["game_id"] = self.room_group_name
 
@@ -202,6 +213,9 @@ class GameConsumer(WebsocketConsumer):
                 and initial_state["status"] == GameStatus.WAITING
             ):
                 initial_state["status"] = GameStatus.ONGOING
+
+            # Save updated state back to Redis
+            set_game(self.room_group_name, initial_state)
 
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
