@@ -119,7 +119,6 @@ const Game = () => {
       setPendingNavigation(null);
     }
   };
-  k;
   const handleLeaveCancel = () => {
     setShowLeaveConfirmation(false);
     if (blocker.state === "blocked") {
