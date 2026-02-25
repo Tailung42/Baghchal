@@ -34,6 +34,13 @@ Bagh Chal is a two-player strategy game where:
 - Node.js 18+
 - npm or yarn
 
+### Redis DB
+
+```bash
+# recommended, install docker if not in system
+docker run --name redis  -p 6379:6379 -it redis:latest
+```
+
 ### Backend Setup
 
 ```bash
