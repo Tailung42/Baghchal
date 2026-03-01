@@ -34,11 +34,36 @@ Bagh Chal is a two-player strategy game where:
 - Node.js 18+
 - npm or yarn
 
+## Configuration
+
+### Environment Variables
+
+**Frontend** (`frontend/.env`):
+```env
+VITE_BASE_WS_URL=ws://localhost:8000/
+VITE_BASE_HTTP_URL=http://localhost:8000/
+```
+
+**Backend** (`backend/.env`):
+```env
+SECRET_KEY=your-django-secret-key
+DEBUG=True
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+GOOGLE_CLIENT_ID=your-google-client-id
+```
+
+To generate a new Django secret key:
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
 ### Redis DB
 
 ```bash
 # recommended, install docker if not in system
-docker run --name redis  -p 6379:6379 -it redis:latest
+docker run -d --name redis  -p 6379:6379 -it redis:latest
 ```
 
 ### Backend Setup
@@ -67,8 +92,6 @@ python manage.py createsuperuser
 # Start development server
 python manage.py runserver
 ```
-
-Backend runs on `http://localhost:8000`
 
 ### Frontend Setup
 
