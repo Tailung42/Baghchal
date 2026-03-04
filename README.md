@@ -2,7 +2,7 @@
 
 A modern web implementation of Bagh Chal (Tigers and Goats), a traditional asymmetric strategy board game from Nepal. Play online with real-time multiplayer functionality.
 
-## 🎮 About the Game
+## About the Game
 
 Bagh Chal is a two-player strategy game where:
 
@@ -11,7 +11,7 @@ Bagh Chal is a two-player strategy game where:
 - Tigers win by capturing 5 goats
 - Goats win by immobilizing all tigers
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Backend
 
@@ -28,11 +28,43 @@ Bagh Chal is a two-player strategy game where:
 - **React Router 7** - Client-side routing
 - **Axios** - HTTP client
 
-## 📋 Prerequisites
+## Quick Start
+
+The easiest way to get started is using the provided startup script:
+
+```bash
+# Clone the repository and navigate to the project directory
+cd baghchal
+
+# Make the script executable (first time only)
+chmod +x start.sh
+
+# Run the startup script
+./start.sh
+```
+
+This will:
+- Check for required dependencies (Python, Node.js, npm)
+- Start Redis server (if available)
+- Set up and start the backend server on port 8000
+- Set up and start the frontend dev server on port 5173
+
+**Access the game:**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+
+Press `Ctrl+C` to stop all services.
+
+## Prerequisites
 
 - Python 3.8+
 - Node.js 18+
 - npm or yarn
+- Redis (optional, will use in-memory storage if not available)
+
+##  Manual Setup
+
+If you prefer to set up each service manually, follow these steps:
 
 ## Configuration
 
@@ -108,7 +140,7 @@ npm run dev
 
 Frontend runs on `http://localhost:5173`
 
-## 🎯 How to Play
+##  How to Play
 
 **Start a Game:**
 Create a new game and share the ID with a friend
@@ -152,7 +184,7 @@ baghchal/
     └── package.json
 ```
 
-## 🎯 Core Features
+##  Core Features
 
 - **Real-time Multiplayer** - WebSocket-based game synchronization
 - **Multiple Game Modes**:
@@ -164,7 +196,7 @@ baghchal/
 - **Move Validation** - Server-side game rule enforcement
 - **Responsive Design** - Works on desktop and mobile
 
-## 🔧 Configuration
+##  Configuration
 
 ### Environment Variables
 
@@ -181,7 +213,7 @@ VITE_BASE_HTTP_URL=http://localhost:8000/
 - Allowed hosts: Update `ALLOWED_HOSTS` for production
 - CORS: Configure `CORS_ALLOWED_ORIGINS`
 
-## 🧪 Development
+##  Development
 
 ### Running Tests
 
@@ -203,7 +235,7 @@ cd frontend
 npm run lint
 ```
 
-## 🎨 Game Logic
+##  Game Logic
 
 The game engine is split between frontend and backend:
 
@@ -222,7 +254,7 @@ The game engine is split between frontend and backend:
 - `placement` - Goats being placed on board (first 20 moves)
 - `displacement` - Both players moving pieces
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions! Here's how to get started:
 
@@ -244,7 +276,7 @@ We welcome contributions! Here's how to get started:
 - [ ] Spectator mode?
 - [ ] Game replay functionality?
 
-## 📄 License
+##  License
 
 This project is open source and available under the [MIT License](LICENSE).
 
