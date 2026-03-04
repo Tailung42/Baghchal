@@ -1,6 +1,6 @@
-import { createContext, useContext, useRef, useState, useEffect } from "react";
+import { createContext, useContext, useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "./AuthContext";
+import { useAuth } from "../hooks/useAuth";
 
 const initialGameState = {
   board: {
@@ -29,43 +29,40 @@ export const useWebSocket = () => useContext(WebSocketContext);
 const baseSocketUrl = import.meta.env.VITE_BASE_WS_URL;
 
 export const WebSocketProvider = ({ children }) => {
-  const { auth } = useContext(AuthContext);
+  const { auth } = useAuth();
   const navigate = useNavigate();
   const socketRef = useRef(null);
   const [gameState, setGameState] = useState(initialGameState);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionParams, setConnectionParams] = useState(null);
 
-  const connect = (gameId = "", mode = "", playAs = "") => {
+  const connect = useCallback((gameId = "", mode = "", playAs = "") => {
     setConnectionParams({ gameId: gameId, mode: mode, playAs: playAs });
-  };
+  }, []);
 
-  // ? should change state adn not "do stuffs"
-  const send = (message) => {
+  const send = useCallback((message) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(message);
     } else {
       console.warn("WebSocket is not connected. Cannot send message:", message);
     }
-  };
+  }, []);
 
-  // ? should change state and not "do stuffs"
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.close();
       socketRef.current = null;
     }
     setIsConnected(false);
-  };
+  }, []);
 
   useEffect(() => {
-    // ? if (!connectionParams.gameId && !connectionParams.mode) { # there is no game id for quick mode. does it need a fix ?
     if (!connectionParams?.mode) {
       return;
     }
     // close existing websocket
     if (socketRef.current) socketRef.current.close();
-    const username = auth.isLoggedIn ? auth.user.username : auth.guestId;
+    const username = auth.isLoggedIn ? auth.user?.username : auth.guestId;
     const params = new URLSearchParams({
       game_id: connectionParams.gameId,
       mode: connectionParams.mode,
@@ -82,7 +79,7 @@ export const WebSocketProvider = ({ children }) => {
     ws.onerror = handleError;
 
     socketRef.current = ws;
-  }, [connectionParams?.mode, connectionParams?.gameId, auth]);
+  }, [connectionParams]);
 
   const handleOpen = () => {
     setIsConnected(true);

@@ -1,5 +1,5 @@
-import { useContext, useState } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { useState } from "react";
+import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Outlet } from "react-router-dom";
 
@@ -22,15 +22,15 @@ function Layout({ setAuthModalOpen }) {
 export default Layout;
 
 function SideBar({ setAuthModalOpen }) {
-  const { auth, setAuth } = useContext(AuthContext);
+  const { auth, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLoginToggle = () => {
-    if (!auth.user) {
+    if (!auth?.user) {
       setAuthModalOpen(true);
     } else {
-      setAuth({ isLoggedIn: false });
+      logout();
     }
     setIsMobileMenuOpen(false);
   };

@@ -1,16 +1,12 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import BaseModal from "./ui/BaseModal";
-import axios from "axios";
-import { AuthContext } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import PrimaryButton from "./ui/PrimaryButton";
 import { GoogleLogin } from "@react-oauth/google";
 
 export default function AuthModal({ isOpen, onClose }) {
-  const baseHttpUrl =
-    import.meta.env.VITE_BASE_HTTP_URL || "http://127.0.0.1:8000/";
-
   const [mode, setMode] = useState("login");
-  const { setAuth } = useContext(AuthContext);
+  const { login, signup, googleAuth } = useAuth();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -38,42 +34,18 @@ export default function AuthModal({ isOpen, onClose }) {
   const handleGoogleSuccess = async (credentialResponse) => {
     setLoading(true);
     setMessage("");
-    console.log("credential:", credentialResponse.credential);
 
     try {
-      const response = await fetch(`${baseHttpUrl}google-auth/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token: credentialResponse.credential,
-          mode: mode,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Handle error responses (400, 500, etc.)
-        setMessage(data.error || "Authentication failed");
-        setMessageType("error");
-        return;
-      }
-
-      // Success
-      const userData = data.user_data;
-      setAuth({ isLoggedIn: true, user: userData });
+      await googleAuth(credentialResponse.credential, mode);
       setMessage(`Google ${mode} successful!`);
       setMessageType("success");
 
-      // Close modal after successful login/signup
       setTimeout(() => {
         onClose();
       }, 500);
     } catch (error) {
-      console.error("Google auth error:", error);
-      setMessage("Network error. Please try again.");
+      const errorMsg = error.response?.data?.error || error.message || "Authentication failed";
+      setMessage(errorMsg);
       setMessageType("error");
     } finally {
       setLoading(false);
@@ -93,29 +65,22 @@ export default function AuthModal({ isOpen, onClose }) {
         data.append("password", formData.password);
         if (formData.avatar) data.append("avatar", formData.avatar);
 
-        await axios.post(`${baseHttpUrl}signup/`, data, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-
+        await signup(data);
         setMessage("Signup successful! You can now log in.");
         setMessageType("success");
         setMode("login");
+        setFormData({ username: "", email: "", password: "", avatar: null });
       } else {
-        const response = await axios.post(`${baseHttpUrl}login/`, {
-          username: formData.username,
-          password: formData.password,
-        });
+        await login(formData.username, formData.password);
         setMessage("Login successful!");
         setMessageType("success");
-        const userData = response.data.user_data;
-        setAuth({ isLoggedIn: true, user: userData });
 
         setTimeout(() => {
           onClose();
         }, 500);
       }
     } catch (error) {
-      const errorMsg = error.response?.data?.error || "An error occurred";
+      const errorMsg = error.response?.data?.error || error.message || "An error occurred";
       setMessage(errorMsg);
       setMessageType("error");
     } finally {

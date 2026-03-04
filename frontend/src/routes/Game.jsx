@@ -1,8 +1,9 @@
-import { useState, useEffect, useContext } from "react";
-import { useWebSocket } from "../context/WebSocketContext";
+import { useState, useEffect } from "react";
+import { useGame } from "../hooks/useGame";
+import { useUsername } from "../hooks/useUsername";
 import Board from "../components/Board";
 import { useParams, useNavigate, useBlocker } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import useSound from "use-sound";
 import moveSound from "../assets/sounds/move_sound.mp3";
 import captureSound from "../assets/sounds/capture_sound.mp3";
@@ -11,8 +12,16 @@ import GameStatusIndicator from "../components/GameStatusIndicator";
 import BaseModal from "../components/ui/BaseModal";
 
 const Game = () => {
-  const { auth } = useContext(AuthContext);
-  const { send, gameState, isConnected, connect, disconnect } = useWebSocket();
+  const { username } = useUsername();
+  const { auth } = useAuth();
+  const {
+    gameState,
+    isConnected,
+    joinGame,
+    sendMove,
+    exitGame,
+    isGameInProgress,
+  } = useGame();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [winner, setWinner] = useState("");
@@ -23,10 +32,6 @@ const Game = () => {
 
   let { gameId } = useParams();
   gameId = gameId.replace("game_", "");
-
-  const isGameInProgress = () => {
-    return gameState?.status !== "over" && gameState?.status !== "waiting";
-  };
 
   // Block in-app navigation
   const blocker = useBlocker(
@@ -39,15 +44,14 @@ const Game = () => {
     const handleBeforeUnload = (e) => {
       if (isGameInProgress()) {
         e.preventDefault();
-        e.returnValue = "Game is in i. Are you sure you want to leave?";
+        e.returnValue = "Game is in progress. Are you sure you want to leave?";
         return e.returnValue;
       }
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
-    // cleanup
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [gameState, isGameInProgress]);
+  }, [isGameInProgress]);
 
   // Handle in-app navigation blocking
   useEffect(() => {
@@ -57,17 +61,18 @@ const Game = () => {
     }
   }, [blocker]);
 
-  // handle joining via url
+  // Handle joining via url
   useEffect(() => {
     if (gameId && !isConnected) {
-      connect(gameId, "join");
+      joinGame(gameId);
     }
-  }, []);
+  }, [gameId, isConnected, joinGame]);
 
+  // Handle game state changes (sounds and winner modal)
   useEffect(() => {
     if (!gameState) return;
 
-    // play move sound  if a piece's position has changed
+    // play move sound if a piece's position has changed
     if (
       gameState.newPosition &&
       gameState.newPosition != gameState.previousPosition
@@ -75,7 +80,6 @@ const Game = () => {
       if (gameState.isCaptured === true) {
         playCaptureSound();
       } else {
-        console.log("moved");
         playMoveSound();
       }
     }
@@ -85,41 +89,30 @@ const Game = () => {
     }
   }, [
     gameState,
-    gameId,
-    isConnected,
-    connect,
     playMoveSound,
     playCaptureSound,
   ]);
 
+  // Ensure user is authenticated
   useEffect(() => {
-    if (!(auth.user || auth.guestId)) {
-      // navigate("/", (replace = true));
+    if (!(auth?.user || auth?.guestId)) {
       navigate("/");
     }
   }, [auth, navigate]);
 
   const handleMoveSend = (move) => {
-    console.log("sending move ", move);
-    send(
-      JSON.stringify({
-        message: {
-          type: "newMove",
-          move: move,
-        },
-      }),
-    );
+    sendMove(move);
   };
 
   const handleLeaveConfirm = () => {
     setShowLeaveConfirmation(false);
     if (pendingNavigation) {
       pendingNavigation();
-      send(JSON.stringify({ message: { type: "exitGame" } }));
-      disconnect();
+      exitGame();
       setPendingNavigation(null);
     }
   };
+
   const handleLeaveCancel = () => {
     setShowLeaveConfirmation(false);
     if (blocker.state === "blocked") {
@@ -130,9 +123,9 @@ const Game = () => {
 
   const handleWinnerModelClick = () => {
     setModalOpen(false);
-    send(JSON.stringify({ message: { type: "exitGame" } }));
-    disconnect();
+    exitGame();
     navigate("/");
+    console.log("navigating home after game is over")
   };
 
   if (!isConnected || !gameState) {
@@ -154,7 +147,7 @@ const Game = () => {
         {/* Player Cards Row */}
         <div className="px-2 py-2">
           <PlayerCard
-            username={auth.user?.username || auth.guestId}
+            username={username}
             goatPlayer={gameState.player["goat"]}
             tigerPlayer={gameState.player["tiger"]}
             currentPlayer={gameState.player[gameState.currentPlayer]}
@@ -206,6 +199,7 @@ function WinnerModal({ winner, isOpen, onClick }) {
   if (!isOpen) return null;
 
   useEffect(() => {
+    if (!isOpen) return;
     const navigate_home_key_handler = (event) => {
       if (event.key == "Enter") {
         onClick();
@@ -216,7 +210,7 @@ function WinnerModal({ winner, isOpen, onClick }) {
     return () => {
       removeEventListener("keydown", navigate_home_key_handler);
     };
-  }, [isOpen]);
+  }, []);
 
   return (
     <div

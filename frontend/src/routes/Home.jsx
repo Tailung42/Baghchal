@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useWebSocket } from "../context/WebSocketContext";
+import { useGame } from "../hooks/useGame";
 import PrimaryButton from "../components/ui/PrimaryButton";
 import SecondaryButton from "../components/ui/SecondaryButton";
 import BaseModal from "../components/ui/BaseModal";
@@ -103,9 +103,8 @@ export default function Home() {
 }
 
 const Modal = ({ isOpen, onClose, mode }) => {
-  // ? is this the correct place to write constant?
   const GameIdLength = 8;
-  const { connect } = useWebSocket();
+  const { createGame, joinGame, quickMatch } = useGame();
   const [gameId, setGameId] = useState(() => crypto.randomUUID());
   const [joinId, setJoinId] = useState("");
   const [playerRole, setPlayerRole] = useState("tiger");
@@ -117,24 +116,22 @@ const Modal = ({ isOpen, onClose, mode }) => {
   useEffect(() => {
     if (mode === "create") {
       setGameId(generateGameId());
-      setPlayerRole("tiger"); // default value for create mode
+      setPlayerRole("tiger");
     } else if (mode === "quick") {
       handleQuick();
     }
   }, [mode]);
 
   const handleCreate = () => {
-    connect(gameId, "create", playerRole);
+    createGame();
   };
 
   const handleJoin = () => {
-    console.log("Joining game:", joinId);
-    connect(joinId.trim(), "join");
+    joinGame(joinId.trim());
   };
 
   const handleQuick = () => {
-    console.log("Searching for quick game");
-    connect("", "quick");
+    quickMatch();
   };
 
   const handleCopy = async (e) => {

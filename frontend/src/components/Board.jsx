@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useContext } from "react";
+import { useState, useEffect, useRef } from "react";
 import Piece from "./Piece";
 import ValidateMove from "./utilities/MoveValidation.js";
-import { AuthContext } from "../context/AuthContext.jsx";
+import { useAuth } from "../hooks/useAuth";
 
 const Board = ({
   board,
@@ -12,7 +12,7 @@ const Board = ({
   newPosition,
   previousPosition,
 }) => {
-  const { auth } = useContext(AuthContext);
+  const { auth } = useAuth();
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 400, height: 400 });
 
