@@ -103,14 +103,14 @@ const Rules = () => {
 
         {/* Gameplay Phases */}
         <section className="mb-16">
-          <div className="bg-[#2f2d2a] rounded-xl shadow-2xl p-8 border border-[#3a3835]">
+          <div className="bg-[var(--color-bg-surface)] rounded-xl shadow-2xl p-8 border border-[var(--color-border-light)]">
             <h2 className="text-3xl font-bold text-white mb-6">
               Gameplay Phases
             </h2>
 
             <div className="space-y-8">
               {/* Phase 1 */}
-              <div className="border-l-4 border-[#f95e5e] bg-[#262522] p-6 rounded-r-lg">
+              <div className="border-l-4 border-[var(--color-primary)] bg-[var(--color-bg-dark)] p-6 rounded-r-lg">
                 <h3 className="text-2xl font-semibold text-white mb-4">
                   Phase 1: Placement Phase
                 </h3>
@@ -120,26 +120,26 @@ const Rules = () => {
                     battlefield one by one.
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-[#2f2d2a] p-5 rounded-lg border border-[#3a3835]">
+                    <div className="bg-[var(--color-bg-surface)] p-5 rounded-lg border border-[var(--color-border-light)]">
                       <h4 className="font-semibold text-white mb-3 text-lg">
                         🐐 Goat Turn:
                       </h4>
                       <ul className="space-y-2 text-gray-300">
                         <li className="flex items-start">
-                          <span className="text-[#f95e5e] mr-2">•</span>
+                          <span className="text-[var(--color-primary)] mr-2">•</span>
                           <span>Place one goat on any empty intersection</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-[#f95e5e] mr-2">•</span>
+                          <span className="text-[var(--color-primary)] mr-2">•</span>
                           <span>Cannot move existing goats yet</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-[#f95e5e] mr-2">•</span>
+                          <span className="text-[var(--color-primary)] mr-2">•</span>
                           <span>Try to limit tiger movement</span>
                         </li>
                       </ul>
                     </div>
-                    <div className="bg-[#2f2d2a] p-5 rounded-lg border border-[#3a3835]">
+                    <div className="bg-[var(--color-bg-surface)] p-5 rounded-lg border border-[var(--color-border-light)]">
                       <h4 className="font-semibold text-white mb-3 text-lg">
                         🐅 Tiger Turn:
                       </h4>
@@ -149,17 +149,17 @@ const Rules = () => {
                           <span>Move one tiger to adjacent empty point</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-[#f95e5e] mr-2">•</span>
+                          <span className="text-[var(--color-primary)] mr-2">•</span>
                           <span>Can capture goats by jumping over them</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-[#f95e5e] mr-2">•</span>
+                          <span className="text-[var(--color-primary)] mr-2">•</span>
                           <span>Focus on creating capture opportunities</span>
                         </li>
                       </ul>
                     </div>
                   </div>
-                  <div className="bg-[#2f2d2a] p-4 rounded-lg border border-[#3a3835]">
+                  <div className="bg-[var(--color-bg-surface)] p-4 rounded-lg border border-[var(--color-border-light)]">
                     <p className="text-gray-300">
                       ⏱️ This phase ends when all 20 goats have been placed on
                       the board
@@ -169,7 +169,7 @@ const Rules = () => {
               </div>
 
               {/* Phase 2 */}
-              <div className="border-l-4 border-[#f95e5e] bg-[#262522] p-6 rounded-r-lg">
+              <div className="border-l-4 border-[var(--color-primary)] bg-[var(--color-bg-dark)] p-6 rounded-r-lg">
                 <h3 className="text-2xl font-semibold text-white mb-4">
                   Phase 2: Movement Phase
                 </h3>
@@ -179,32 +179,32 @@ const Rules = () => {
                     strategic battle begins!
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-[#2f2d2a] p-5 rounded-lg border border-[#3a3835]">
+                    <div className="bg-[var(--color-bg-surface)] p-5 rounded-lg border border-[var(--color-border-light)]">
                       <h4 className="font-semibold text-white mb-3 text-lg">
                         🐐 Goat Movement:
                       </h4>
                       <ul className="space-y-2 text-gray-300">
                         <li className="flex items-start">
-                          <span className="text-[#f95e5e] mr-2">•</span>
+                          <span className="text-[var(--color-primary)] mr-2">•</span>
                           <span>
                             Move one goat to adjacent empty intersection
                           </span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-[#f95e5e] mr-2">•</span>
+                          <span className="text-[var(--color-primary)] mr-2">•</span>
                           <span>Work together to surround tigers</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-[#f95e5e] mr-2">•</span>
+                          <span className="text-[var(--color-primary)] mr-2">•</span>
                           <span>Block tiger escape routes</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-[#f95e5e] mr-2">•</span>
+                          <span className="text-[var(--color-primary)] mr-2">•</span>
                           <span>Protect vulnerable goats</span>
                         </li>
                       </ul>
                     </div>
-                    <div className="bg-[#2f2d2a] p-5 rounded-lg border border-[#3a3835]">
+                    <div className="bg-[var(--color-bg-surface)] p-5 rounded-lg border border-[var(--color-border-light)]">
                       <h4 className="font-semibold text-white mb-3 text-lg">
                         🐅 Tiger Movement:
                       </h4>
@@ -218,11 +218,11 @@ const Rules = () => {
                           <span>Jump over adjacent goat to capture it</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-[#f95e5e] mr-2">•</span>
+                          <span className="text-[var(--color-primary)] mr-2">•</span>
                           <span>Continue hunting for the 5th goat</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-[#f95e5e] mr-2">•</span>
+                          <span className="text-[var(--color-primary)] mr-2">•</span>
                           <span>Avoid getting completely surrounded</span>
                         </li>
                       </ul>
@@ -236,14 +236,14 @@ const Rules = () => {
 
         {/* Movement Rules */}
         <section className="mb-16">
-          <div className="bg-[#2f2d2a] rounded-xl shadow-2xl p-8 border border-[#3a3835]">
+          <div className="bg-[var(--color-bg-surface)] rounded-xl shadow-2xl p-8 border border-[var(--color-border-light)]">
             <h2 className="text-3xl font-bold text-white mb-6">
               Movement Rules
             </h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="space-y-6">
-                <div className="bg-[#262522] border border-[#3a3835] p-6 rounded-lg">
+                <div className="bg-[var(--color-bg-dark)] border border-[var(--color-border-light)] p-6 rounded-lg">
                   <h3 className="text-xl font-semibold text-white mb-4">
                     🐅 Tiger Movement
                   </h3>

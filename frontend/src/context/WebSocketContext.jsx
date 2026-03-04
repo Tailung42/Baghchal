@@ -1,6 +1,7 @@
 import { createContext, useContext, useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { gameApi } from "../api/client";
 
 const initialGameState = {
   board: {
@@ -32,13 +33,103 @@ export const WebSocketProvider = ({ children }) => {
   const { auth } = useAuth();
   const navigate = useNavigate();
   const socketRef = useRef(null);
+  // store the current game id in a ref so that callbacks can access it even
+  // if state hasn't updated yet
+  const gameIdRef = useRef(null);
   const [gameState, setGameState] = useState(initialGameState);
   const [isConnected, setIsConnected] = useState(false);
-  const [connectionParams, setConnectionParams] = useState(null);
+  const [gameId, setGameId] = useState(null);
 
-  const connect = useCallback((gameId = "", mode = "", playAs = "") => {
-    setConnectionParams({ gameId: gameId, mode: mode, playAs: playAs });
-  }, []);
+  const getUsername = useCallback(() => {
+    return auth.isLoggedIn ? auth.user?.username : auth.guestId;
+  }, [auth]);
+
+  const connectWebSocket = useCallback((gid) => {
+    if (!gid) {
+      console.error("Cannot connect WebSocket without game ID");
+      return;
+    }
+
+    // make sure our internal ref/state knows the current id immediately
+    gameIdRef.current = gid;
+    setGameId(gid);
+
+    // Close existing connection
+    if (socketRef.current) socketRef.current.close();
+
+    const username = getUsername();
+    const params = new URLSearchParams({
+      game_id: gid,
+      username: username,
+    });
+
+    const ws = new WebSocket(`${baseSocketUrl}?${params}`);
+    ws.onopen = handleOpen;
+    ws.onmessage = handleMessage;
+    ws.onclose = handleClose;
+    ws.onerror = handleError;
+    socketRef.current = ws;
+  }, [getUsername]);
+
+  const createGameHTTP = useCallback(async () => {
+    try {
+      const username = getUsername();
+      const response = await gameApi.create(username);
+      const data = response.data;
+      setGameId(data.game_id);
+      setGameState(data.game_state);
+      connectWebSocket(data.game_id);
+      return data.game_id;
+    } catch (error) {
+      console.error("Error creating game:", error);
+      throw error;
+    }
+  }, [getUsername, connectWebSocket]);
+
+  const joinGameHTTP = useCallback(async (gid) => {
+    try {
+      const username = getUsername();
+      const response = await gameApi.join(gid, username);
+      const data = response.data;
+      setGameId(data.game_id);
+      setGameState(data.game_state);
+      connectWebSocket(data.game_id);
+      return data.game_id;
+    } catch (error) {
+      console.error("Error joining game:", error);
+      throw error;
+    }
+  }, [getUsername, connectWebSocket]);
+
+  const rejoinGameHTTP = useCallback(async (gid) => {
+    try {
+      const username = getUsername();
+      const response = await gameApi.rejoin(gid, username);
+      const data = response.data;
+      setGameId(data.game_id);
+      setGameState(data.game_state);
+      connectWebSocket(data.game_id);
+      return data.game_id;
+    } catch (error) {
+      console.error("Error rejoining game:", error);
+      throw error;
+    }
+  }, [getUsername, connectWebSocket]);
+
+  const quickMatchHTTP = useCallback(async () => {
+    try {
+      const username = getUsername();
+      const response = await gameApi.quickMatch(username);
+      const data = response.data;
+      setGameId(data.game_id);
+      setGameState(data.game_state);
+      connectWebSocket(data.game_id);
+      return data.game_id;
+    } catch (error) {
+      console.error("Error finding quick match:", error);
+      throw error;
+    }
+  }, [getUsername, connectWebSocket]);
 
   const send = useCallback((message) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -56,31 +147,6 @@ export const WebSocketProvider = ({ children }) => {
     setIsConnected(false);
   }, []);
 
-  useEffect(() => {
-    if (!connectionParams?.mode) {
-      return;
-    }
-    // close existing websocket
-    if (socketRef.current) socketRef.current.close();
-    const username = auth.isLoggedIn ? auth.user?.username : auth.guestId;
-    const params = new URLSearchParams({
-      game_id: connectionParams.gameId,
-      mode: connectionParams.mode,
-      play_as: connectionParams.playAs,
-      username: username,
-    });
-
-    // establish a connection to the server (ie. create instance)
-    const ws = new WebSocket(`${baseSocketUrl}?${params}`);
-
-    ws.onopen = handleOpen;
-    ws.onmessage = handleMessage;
-    ws.onclose = handleClose;
-    ws.onerror = handleError;
-
-    socketRef.current = ws;
-  }, [connectionParams]);
-
   const handleOpen = () => {
     setIsConnected(true);
     console.log("WebSocket connected");
@@ -92,8 +158,17 @@ export const WebSocketProvider = ({ children }) => {
 
     if (newGameState) {
       setGameState(newGameState);
-      if (!window.location.pathname.includes("/game/")) {
-        navigate(`/game/${newGameState.game_id}`);
+
+      // determine which id to navigate with (use the value from the
+      // payload first since the local state may not yet have updated)
+      const idToUse =
+        (newGameState.game_id || gameIdRef.current || gameId || "").replace(
+          "game_",
+          ""
+        );
+
+      if (idToUse && !window.location.pathname.includes("/game/")) {
+        navigate(`/game/${idToUse}`);
       }
     }
   };
@@ -120,11 +195,15 @@ export const WebSocketProvider = ({ children }) => {
   return (
     <WebSocketContext.Provider
       value={{
-        connect,
+        createGame: createGameHTTP,
+        joinGame: joinGameHTTP,
+        rejoinGame: rejoinGameHTTP,
+        quickMatch: quickMatchHTTP,
         send,
         disconnect,
         gameState,
         isConnected,
+        gameId,
       }}
     >
       {children}

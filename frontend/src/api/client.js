@@ -22,4 +22,18 @@ export const authApi = {
     api.post('auth/google', { token, mode }),
 };
 
+export const gameApi = {
+  create: (username) =>
+    api.post('game/create/', { username }),
+
+  join: (gameId, username) =>
+    api.post('game/join/', { game_id: gameId, username }),
+
+  rejoin: (gameId, username) =>
+    api.post('game/rejoin/', { game_id: gameId, username }),
+
+  quickMatch: (username) =>
+    api.post('game/quick-match/', { username }),
+};
+
 export default api;

@@ -165,7 +165,7 @@ const Modal = ({ isOpen, onClose, mode }) => {
             Share this Game ID with a friend:
           </p>
 
-          <div className="bg-[#1a1a1a] p-4 rounded-lg border border-[#3a3835] flex justify-between items-center gap-3">
+          <div className="bg-[var(--color-bg-surface-dark)] p-4 rounded-lg border border-[var(--color-border-light)] flex justify-between items-center gap-3">
             <span className="font-mono text-gray-200 break-all text-sm">
               {gameId}
             </span>
@@ -184,7 +184,7 @@ const Modal = ({ isOpen, onClose, mode }) => {
             <select
               value={playerRole}
               onChange={(e) => setPlayerRole(e.target.value)}
-              className="w-full p-3 bg-[#1a1a1a] border border-[#3a3835] text-gray-200 rounded-lg focus:outline-none focus:border-[#f95e5e] transition-all"
+              className="w-full p-3 bg-[var(--color-bg-surface-dark)] border border-[var(--color-border-light)] text-gray-200 rounded-lg focus:outline-none focus:border-[var(--color-primary)] transition-all"
             >
               <option value="tiger">🐅 Tiger (Hunter)</option>
               <option value="goat">🐐 Goat (Defender)</option>
@@ -204,7 +204,7 @@ const Modal = ({ isOpen, onClose, mode }) => {
             type="text"
             value={joinId}
             onChange={(e) => setJoinId(e.target.value)}
-            className="w-full p-4 rounded-lg bg-[#1a1a1a] border border-[#3a3835] text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#f95e5e] transition-all"
+            className="w-full p-4 rounded-lg bg-[var(--color-bg-surface-dark)] border border-[var(--color-border-light)] text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[var(--color-primary)] transition-all"
             placeholder="Paste Game ID here..."
           />
 

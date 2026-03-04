@@ -2,19 +2,52 @@ import { useCallback } from 'react';
 import { useWebSocket } from '../context/WebSocketContext';
 
 export function useGame() {
-  const { connect, send, disconnect, gameState, isConnected } = useWebSocket();
+  const { 
+    createGame: createGameHTTP,
+    joinGame: joinGameHTTP,
+    rejoinGame: rejoinGameHTTP,
+    quickMatch: quickMatchHTTP,
+    send, 
+    disconnect, 
+    gameState, 
+    isConnected 
+  } = useWebSocket();
 
-  const joinGame = useCallback((gameId) => {
-    connect(gameId, 'join');
-  }, [connect]);
+  const createGame = useCallback(async () => {
+    try {
+      await createGameHTTP();
+    } catch (error) {
+      console.error('Failed to create game:', error);
+      throw error;
+    }
+  }, [createGameHTTP]);
 
-  const createGame = useCallback(() => {
-    connect('', 'create');
-  }, [connect]);
+  const joinGame = useCallback(async (gameId) => {
+    try {
+      await joinGameHTTP(gameId);
+    } catch (error) {
+      console.error('Failed to join game:', error);
+      throw error;
+    }
+  }, [joinGameHTTP]);
 
-  const quickMatch = useCallback(() => {
-    connect('', 'quick');
-  }, [connect]);
+  const rejoinGame = useCallback(async (gameId) => {
+    try {
+      await rejoinGameHTTP(gameId);
+    } catch (error) {
+      console.error('Failed to rejoin game:', error);
+      throw error;
+    }
+  }, [rejoinGameHTTP]);
+
+  const quickMatch = useCallback(async () => {
+    try {
+      await quickMatchHTTP();
+    } catch (error) {
+      console.error('Failed to find quick match:', error);
+      throw error;
+    }
+  }, [quickMatchHTTP]);
 
   const sendMove = useCallback((move) => {
     send(JSON.stringify({ message: { type: 'newMove', move } }));
@@ -32,8 +65,9 @@ export function useGame() {
   return {
     gameState,
     isConnected,
-    joinGame,
     createGame,
+    joinGame,
+    rejoinGame,
     quickMatch,
     sendMove,
     exitGame,
