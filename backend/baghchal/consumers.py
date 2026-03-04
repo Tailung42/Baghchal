@@ -11,10 +11,6 @@ from .redis import (
     game_exists,
 )
 from .utils import get_initial_game_state, update_game_state, cleanup_game_states
-import random
-import uuid
-
-GAME_ID_LENGTH = 8
 
 
 class GameStatus:
@@ -23,81 +19,108 @@ class GameStatus:
     OVER = "over"
 
 
-class Mode:
-    CREATE = "create"
-    JOIN = "join"
-    QUICK = "quick"
-
-
 class GameConsumer(WebsocketConsumer):
+    """
+    WebSocket consumer for real-time game play only.
+    Game creation, joining, and rejoining should be done via HTTP endpoints.
+    This consumer only handles:
+    - Real-time move updates
+    - Game state broadcasts
+    - Player disconnect handling
+    """
+
     def connect(self):
-        # store completed game and remove abandoned ones
+        # Store completed games and remove abandoned ones
         cleanup_game_states()
 
-        # get connection paameters for game
+        # Get connection parameters (game must already exist from HTTP endpoint)
         query = parse_qs(self.scope["query_string"].decode())
         self.game_id = query.get("game_id", [None])[0]
-        self.mode = query.get("mode", [None])[0]
-        self.play_as = query.get("play_as", [None])[0]
         self.username = query.get("username", [None])[0]
 
         try:
-            self.handle_connection_attempt()
-
+            self.validate_connection()
         except Exception as e:
-            message = f"Error connecting:{e}"
-            print(message)
-            self.close_with_error(message)
-
-        try:
-            self.handle_player_join()
-            
-        except Exception as e:
-            message = f"Error joining player: {e}"
+            message = f"Connection error: {e}"
             print(message)
             self.close_with_error(message)
             return
 
-    def receive(self, text_data):
         try:
-            message = (json.loads(text_data))["message"]
-            if not hasattr(self, "room_group_name"):
-                print("Error: No room group name set")
-                return
+            self.setup_game_session()
+        except Exception as e:
+            message = f"Error setting up game session: {e}"
+            print(message)
+            self.close_with_error(message)
+            return
 
-            # remove user from game if exit game received
-            if message["type"] == "exitGame":
-                print(f"{self.username} exited the game")
-                gamestate = get_game(self.room_group_name)
-                if gamestate:
-                    for role, player in gamestate["player"].items():
-                        if player == self.username:
-                            gamestate["player"][role] = ""
-                    set_game(self.room_group_name, gamestate)
+    def validate_connection(self):
+        """Validate connection parameters"""
+        if not self.username:
+            raise ValueError("Username not provided")
+        if not self.game_id:
+            raise ValueError("Game ID not provided")
 
-            # TODO: inform other player that opponent has left the game
+        self.room_group_name = f"game_{self.game_id}"
 
-            # apply the new move
-            elif message["type"] == "newMove":
-                move = message["move"]
-                new_game_state = update_game_state(self.room_group_name, move)
+        # Verify game exists (should be created via HTTP endpoint)
+        if not game_exists(self.room_group_name):
+            raise ValueError(f"Game {self.game_id} does not exist")
 
-                # send error message for invaid move
-                if not new_game_state:
-                    self.send(
-                        text_data=json.dumps(
-                            {"message": {"type": "error", "error": "Invalid move"}}
-                        )
-                    )
-                    return
+        game_state = get_game(self.room_group_name)
+        if not game_state:
+            raise ValueError("Failed to retrieve game state")
 
-                # Broadcast updated state to all players in the game
-                event = {"type": "send_game_state", "game_state": new_game_state}
-                async_to_sync(self.channel_layer.group_send)(
-                    self.room_group_name, event
-                )
+        # Verify user is a player in this game
+        user_is_player = False
+        for role, player in game_state.get("player", {}).items():
+            if player == self.username:
+                user_is_player = True
+                break
 
-        except (json.JSONDecodeError, KeyError) as e:
+        if not user_is_player:
+            raise ValueError(f"User {self.username} is not part of game {self.game_id}")
+
+        self.accept()
+        print(f"WebSocket connection accepted for {self.username} in game {self.game_id}")
+
+    def setup_game_session(self):
+        """Set up game session and send initial state"""
+        # Join room group for broadcasting
+        async_to_sync(self.channel_layer.group_add)(
+            self.room_group_name, self.channel_name
+        )
+
+        # Get current game state and send to player
+        game_state = get_game(self.room_group_name)
+        if not game_state:
+            raise ValueError("Game state not found")
+
+        print(f"Sending initial game state to {self.username}")
+        self.send(
+            text_data=json.dumps(
+                {"message": {"type": "update", "game_state": game_state}}
+            )
+        )
+
+    def receive(self, text_data):
+        """Handle incoming WebSocket messages"""
+        try:
+            message = json.loads(text_data).get("message")
+            if not message:
+                raise ValueError("Invalid message format")
+
+            message_type = message.get("type")
+
+            # Handle game exit
+            if message_type == "exitGame":
+                self.handle_exit_game()
+
+            # Handle new moves
+            elif message_type == "newMove":
+                self.handle_new_move(message.get("move"))
+
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
             print(f"Error processing message: {e}")
             self.send(
                 text_data=json.dumps(
@@ -105,131 +128,58 @@ class GameConsumer(WebsocketConsumer):
                 )
             )
 
+    def handle_exit_game(self):
+        """Handle player exiting the game"""
+        print(f"{self.username} exited the game")
+        game_state = get_game(self.room_group_name)
+        if game_state:
+            # Clear player slot
+            for role, player in game_state.get("player", {}).items():
+                if player == self.username:
+                    game_state["player"][role] = ""
+                    break
+            set_game(self.room_group_name, game_state)
+            # Broadcast updated state
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {"type": "send_game_state", "game_state": game_state},
+            )
+
+    def handle_new_move(self, move):
+        """Handle and validate new move"""
+        if not move:
+            self.send(
+                text_data=json.dumps(
+                    {"message": {"type": "error", "error": "Invalid move"}}
+                )
+            )
+            return
+
+        new_game_state = update_game_state(self.room_group_name, move)
+
+        if not new_game_state:
+            self.send(
+                text_data=json.dumps(
+                    {"message": {"type": "error", "error": "Invalid move"}}
+                )
+            )
+            return
+
+        # Broadcast updated state to all players in the game
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name,
+            {"type": "send_game_state", "game_state": new_game_state},
+        )
+
     def disconnect(self, close_code):
-        print(f"WebSocket disconnected with code: {close_code}")
+        """Handle WebSocket disconnect"""
+        print(f"Player {self.username} disconnected from {self.game_id} (code: {close_code})")
 
         # Leave room group
         if hasattr(self, "room_group_name"):
             async_to_sync(self.channel_layer.group_discard)(
                 self.room_group_name, self.channel_name
             )
-
-    def handle_connection_attempt(self):
-
-        print(
-            f"Connection attempt - Mode: {self.mode}, Game ID: {self.game_id}, Play as: {self.play_as}"
-        )
-
-        # Validate connection parameters
-        if not self.username:
-            raise ValueError("Error: Username not  provided")
-        if not self.mode:
-            raise ValueError("Error: No mode specified")
-        if self.mode != "quick" and not self.game_id:
-            raise ValueError("Error: Invalid game ID for non-quick mode")
-
-        self.accept()
-        print("WebSocket connection accepted")
-
-    def handle_player_join(self):
-
-        if self.mode == Mode.CREATE:
-            # Set room group name for create mode
-            self.room_group_name = f"game_{self.game_id}"
-            if game_exists(self.room_group_name):
-                raise ValueError("Error: Game already exists")
-            set_game(self.room_group_name, get_initial_game_state())
-            print(f"Created new game: {self.room_group_name}")
-
-        elif self.mode == Mode.JOIN:
-            self.room_group_name = f"game_{self.game_id}"
-            game_state = get_game(self.room_group_name)
-
-            if not game_state:
-                raise ValueError("No Game available for joining")
-
-            # if status is ongoing and user is a player in it, REJOIN
-            if game_state["status"] == GameStatus.ONGOING:
-                for k, v in game_state.get("player").items():
-                    if v == self.username:
-                        self.play_as = k
-                        break
-                else:
-                    # if User not part of the game
-                    raise ValueError("Can not rejoin, user not part of game")
-            print(f"Joining existing game: {self.room_group_name}")
-
-        elif self.mode == Mode.QUICK:
-            # get a list of games whose status is waiting
-            all_games = get_all_games()
-            waiting_games = [
-                (game_id, game_state)
-                for game_id, game_state in all_games.items()
-                if game_state.get("status") == GameStatus.WAITING
-            ]
-
-            if waiting_games:
-                self.room_group_name = random.choice(waiting_games)[0]
-                print(f"Joining waiting game: {self.room_group_name}")
-            else:
-                # Create new game for quick mode
-                new_game_id = str(uuid.uuid4())[:GAME_ID_LENGTH]
-                self.room_group_name = f"game_{new_game_id}"
-                set_game(self.room_group_name, get_initial_game_state())
-                print(f"Created new quick game: {self.room_group_name}")
-
-        # Join room group
-        async_to_sync(self.channel_layer.group_add)(
-            self.room_group_name, self.channel_name
-        )
-
-        self.send_initial_game_state()
-
-    def send_initial_game_state(self):
-        # Send initial game state to the connected player
-        try:
-            initial_state = get_game(self.room_group_name)
-            if not initial_state:
-                raise ValueError("Game state not found")
-                
-            # add game_id of the game inside itself
-            initial_state["game_id"] = self.room_group_name
-
-            # Handle player assignment (for all modes except REJOIN which already set play_as)
-            if self.play_as:
-                # CREATE mode or REJOIN mode - role already specified
-                initial_state["player"][self.play_as] = self.username
-            else:
-                # JOIN or QUICK mode - assign to first available slot
-                for role, player in initial_state["player"].items():
-                    if not player:
-                        self.play_as = role
-                        initial_state["player"][role] = self.username
-                        break
-
-            # Update status to ongoing if both players are now connected
-            if (
-                all(initial_state["player"].values())
-                and initial_state["status"] == GameStatus.WAITING
-            ):
-                initial_state["status"] = GameStatus.ONGOING
-
-            # Save updated state back to Redis
-            set_game(self.room_group_name, initial_state)
-
-            async_to_sync(self.channel_layer.group_send)(
-                self.room_group_name,
-                {
-                    "type": "send_game_state",
-                    "game_state": initial_state,
-                },
-            )
-            print(
-                f"Sent initial game state to player: {self.username} as {self.play_as}"
-            )
-
-        except Exception as e:
-            print(f"Error sending initial state: {e}")
 
     def send_game_state(self, event):
         """Handle group message to send game state update"""
@@ -243,6 +193,7 @@ class GameConsumer(WebsocketConsumer):
             print(f"Error sending game state: {e}")
 
     def close_with_error(self, message):
+        """Close connection with error message"""
         self.send(
             text_data=json.dumps({"message": {"type": "error", "error": message}})
         )
