@@ -71,10 +71,10 @@ export const WebSocketProvider = ({ children }) => {
     socketRef.current = ws;
   }, [getUsername]);
 
-  const createGameHTTP = useCallback(async () => {
+  const createGameHTTP = useCallback(async (gameId, playerRole) => {
     try {
       const username = getUsername();
-      const response = await gameApi.create(username);
+      const response = await gameApi.create(gameId, username, playerRole);
       const data = response.data;
       setGameId(data.game_id);
       setGameState(data.game_state);
@@ -86,10 +86,10 @@ export const WebSocketProvider = ({ children }) => {
     }
   }, [getUsername, connectWebSocket]);
 
-  const joinGameHTTP = useCallback(async (gid) => {
+  const joinGameHTTP = useCallback(async (gameId, playerRole) => {
     try {
       const username = getUsername();
-      const response = await gameApi.join(gid, username);
+      const response = await gameApi.join(gameId, username, playerRole);
       const data = response.data;
       setGameId(data.game_id);
       setGameState(data.game_state);

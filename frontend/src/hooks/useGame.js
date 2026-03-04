@@ -13,9 +13,9 @@ export function useGame() {
     isConnected 
   } = useWebSocket();
 
-  const createGame = useCallback(async () => {
+  const createGame = useCallback(async (gameId, playerRole) => {
     try {
-      await createGameHTTP();
+      await createGameHTTP(gameId, playerRole);
     } catch (error) {
       console.error('Failed to create game:', error);
       throw error;

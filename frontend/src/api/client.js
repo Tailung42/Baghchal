@@ -23,11 +23,11 @@ export const authApi = {
 };
 
 export const gameApi = {
-  create: (username) =>
-    api.post('game/create/', { username }),
+  create: (gameId, username, playerRole) =>
+    api.post('game/create/', {game_id: gameId, username, player_role: playerRole }),
 
   join: (gameId, username) =>
-    api.post('game/join/', { game_id: gameId, username }),
+    api.post('game/join/', { game_id: gameId, username}),
 
   rejoin: (gameId, username) =>
     api.post('game/rejoin/', { game_id: gameId, username }),

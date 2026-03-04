@@ -27,11 +27,17 @@ def create_game(request):
     """Create a new game and initialize it in Redis"""
     try:
         username = request.data.get("username")
+        game_id = request.data.get("game_id")
+
+        player_role = request.data.get("player_role", "tiger")
+
+        if not game_id:
+            # raise ValueError("GameId is required to create a game.")
+            game_id = str(uuid.uuid4())[:GAME_ID_LENGTH]
+            
         if not username:
             return Response({"error": "Username required"}, status=400)
 
-        # Generate unique game ID
-        game_id = str(uuid.uuid4())[:GAME_ID_LENGTH]
         room_group_name = f"game_{game_id}"
 
         # Check if game already exists
@@ -40,7 +46,7 @@ def create_game(request):
 
         # Initialize game state
         initial_state = get_initial_game_state()
-        initial_state["player"]["tiger"] = username
+        initial_state["player"][player_role] = username
         initial_state["game_id"] = room_group_name
         set_game(room_group_name, initial_state)
 
@@ -48,7 +54,7 @@ def create_game(request):
         return Response(
             {
                 "game_id": game_id,
-                "play_as": "tiger",
+                "play_as": player_role,
                 "game_state": initial_state,
             },
             status=201,

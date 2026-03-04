@@ -93,7 +93,7 @@ export default function Home() {
         </div>
       </div>
 
-      <Modal
+      <GameModal
         isOpen={gameModalOpen}
         onClose={() => setGameModalOpen(false)}
         mode={gameMode}
@@ -102,15 +102,19 @@ export default function Home() {
   );
 }
 
-const Modal = ({ isOpen, onClose, mode }) => {
+const GameModal = ({ isOpen, onClose, mode }) => {
   const GameIdLength = 8;
   const { createGame, joinGame, quickMatch } = useGame();
-  const [gameId, setGameId] = useState(() => crypto.randomUUID());
+  const [gameId, setGameId] = useState(null);
   const [joinId, setJoinId] = useState("");
   const [playerRole, setPlayerRole] = useState("tiger");
+  const [joinError, setJoinError] = useState("");
 
   const generateGameId = () => {
-    return crypto.randomUUID().substring(0, GameIdLength);
+    let gameid = crypto.randomUUID().substring(0, GameIdLength);
+   
+    console.log("Generating Game: ", gameid);
+    return gameid;
   };
 
   useEffect(() => {
@@ -123,11 +127,16 @@ const Modal = ({ isOpen, onClose, mode }) => {
   }, [mode]);
 
   const handleCreate = () => {
-    createGame();
+    createGame(gameId, playerRole);
   };
 
-  const handleJoin = () => {
-    joinGame(joinId.trim());
+  const handleJoin = async () => {
+    try {
+      await joinGame(joinId.trim());
+      setJoinError("");
+    } catch (error) {
+      setJoinError(error.response?.data?.error || "Failed to join game");
+    }
   };
 
   const handleQuick = () => {
@@ -207,6 +216,10 @@ const Modal = ({ isOpen, onClose, mode }) => {
             className="w-full p-4 rounded-lg bg-[var(--color-bg-surface-dark)] border border-[var(--color-border-light)] text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[var(--color-primary)] transition-all"
             placeholder="Paste Game ID here..."
           />
+
+          {joinError && (
+            <p className="text-red-400 text-sm">{joinError}</p>
+          )}
 
           <PrimaryButton
             onClick={handleJoin}
