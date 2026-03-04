@@ -6,7 +6,7 @@ urlpatterns = [
     path('', views.index),
     path('signup/', views.signup),
     path('login/', views.login),
-    path('google-auth/', views.google_auth)
+    path('auth/google', views.google_auth)
 
 ]
 

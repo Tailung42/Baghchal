@@ -19,7 +19,7 @@ export const authApi = {
     }),
 
   googleAuth: (token, mode) =>
-    api.post('google-auth/', { token, mode }),
+    api.post('auth/google', { token, mode }),
 };
 
 export default api;
