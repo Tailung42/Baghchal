@@ -115,7 +115,7 @@ def check_game_over(game_state):
         game_state["status"] = "over"
         game_state["winner"] = "tiger"
         print("tiger won!!!")
-        return
+        return True
 
     # Goat win condition
     tigers = [position for position, piece in board.items() if piece == "tiger"]
