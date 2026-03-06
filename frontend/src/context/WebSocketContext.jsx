@@ -103,7 +103,7 @@ export const WebSocketProvider = ({ children }) => {
     async (gameId, playerRole) => {
       try {
         const username = getUsername();
-        const response = await gameApi.join(gameId, username, playerRole);
+        const response = await gameApi.join(gameId, username);
         const data = response.data;
         console.log("Joining response: ", response.data);
         setGameId(data.game_id);
