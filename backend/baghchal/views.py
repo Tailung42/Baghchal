@@ -54,8 +54,6 @@ def create_game(request):
         return Response(
             {
                 "game_id": game_id,
-                "play_as": player_role,
-                "game_state": initial_state,
             },
             status=201,
         )
@@ -83,24 +81,20 @@ def join_game(request):
         # Ensure game_id is set in game_state
         game_state["game_id"] = room_group_name
 
-        # Check if user is already a player (rejoin scenario)
-        for role, player in game_state.get("player", {}).items():
-            if player == username:
-                return Response(
-                    {
-                        "game_id": game_id,
-                        "play_as": role,
-                        "game_state": game_state,
-                    },
-                    status=200,
-                )
-
-        # User is not in the game, check if we can add them
+        # check if the user is already in the game 
         if game_state["status"] == GAME_STATUS_ONGOING:
             return Response(
                 {"error": "Cannot join ongoing game as new player"},
                 status=400,
             )
+        
+        # Check if user is already in the game
+        for role, player in game_state.get("player", {}).items():
+            if player == username:
+                return Response(
+                    {"error": "Cannot join a game twice"},
+                    status=400,)
+            
 
         # Find available role
         available_role = None
@@ -124,26 +118,24 @@ def join_game(request):
 
         set_game(room_group_name, game_state)
 
-        # broadcast to any connected clients that state changed (player joined)
-        try:
-            from asgiref.sync import async_to_sync
-            from channels.layers import get_channel_layer
+        # # broadcast to any connected clients that state changed (player joined)
+        # try:
+        #     from asgiref.sync import async_to_sync
+        #     from channels.layers import get_channel_layer
 
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                room_group_name,
-                {"type": "send_game_state", "game_state": game_state},
-            )
-        except Exception as exc:
-            # logging failure but don't break the response
-            print(f"Failed to broadcast join update: {exc}")
+        #     channel_layer = get_channel_layer()
+        #     async_to_sync(channel_layer.group_send)(
+        #         room_group_name,
+        #         {"type": "send_game_state", "game_state": game_state},
+        #     )
+        # except Exception as exc:
+        #     # logging failure but don't break the response
+        #     print(f"Failed to broadcast join update: {exc}")
 
         print(f"User {username} joined game {room_group_name} as {available_role}")
         return Response(
             {
                 "game_id": game_id,
-                "play_as": available_role,
-                "game_state": game_state,
             },
             status=200,
         )
@@ -188,8 +180,6 @@ def rejoin_game(request):
         return Response(
             {
                 "game_id": game_id,
-                "play_as": user_role,
-                "game_state": game_state,
             },
             status=200,
         )
@@ -252,8 +242,6 @@ def quick_match(request):
                 return Response(
                     {
                         "game_id": game_id,
-                        "play_as": available_role,
-                        "game_state": game_state,
                     },
                     status=200,
                 )

@@ -1,4 +1,11 @@
-import { createContext, useContext, useRef, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useRef,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { gameApi } from "../api/client";
@@ -44,77 +51,90 @@ export const WebSocketProvider = ({ children }) => {
     return auth.isLoggedIn ? auth.user?.username : auth.guestId;
   }, [auth]);
 
-  const connectWebSocket = useCallback((gid) => {
-    if (!gid) {
-      console.error("Cannot connect WebSocket without game ID");
-      return;
-    }
+  const connectWebSocket = useCallback(
+    (gid) => {
+      if (!gid) {
+        console.error("Cannot connect WebSocket without game ID");
+        return;
+      }
 
-    // make sure our internal ref/state knows the current id immediately
-    gameIdRef.current = gid;
-    setGameId(gid);
+      // make sure our internal ref/state knows the current id immediately
+      gameIdRef.current = gid;
+      setGameId(gid);
 
-    // Close existing connection
-    if (socketRef.current) socketRef.current.close();
+      // Close existing connection
+      if (socketRef.current) socketRef.current.close();
 
-    const username = getUsername();
-    const params = new URLSearchParams({
-      game_id: gid,
-      username: username,
-    });
-
-    const ws = new WebSocket(`${baseSocketUrl}?${params}`);
-    ws.onopen = handleOpen;
-    ws.onmessage = handleMessage;
-    ws.onclose = handleClose;
-    ws.onerror = handleError;
-    socketRef.current = ws;
-  }, [getUsername]);
-
-  const createGameHTTP = useCallback(async (gameId, playerRole) => {
-    try {
       const username = getUsername();
-      const response = await gameApi.create(gameId, username, playerRole);
-      const data = response.data;
-      setGameId(data.game_id);
-      setGameState(data.game_state);
-      connectWebSocket(data.game_id);
-      return data.game_id;
-    } catch (error) {
-      console.error("Error creating game:", error);
-      throw error;
-    }
-  }, [getUsername, connectWebSocket]);
+      const params = new URLSearchParams({
+        game_id: gid,
+        username: username,
+      });
 
-  const joinGameHTTP = useCallback(async (gameId, playerRole) => {
-    try {
-      const username = getUsername();
-      const response = await gameApi.join(gameId, username, playerRole);
-      const data = response.data;
-      setGameId(data.game_id);
-      setGameState(data.game_state);
-      connectWebSocket(data.game_id);
-      return data.game_id;
-    } catch (error) {
-      console.error("Error joining game:", error);
-      throw error;
-    }
-  }, [getUsername, connectWebSocket]);
+      const ws = new WebSocket(`${baseSocketUrl}?${params}`);
+      ws.onopen = handleOpen;
+      ws.onmessage = handleMessage;
+      ws.onclose = handleClose;
+      ws.onerror = handleError;
+      socketRef.current = ws;
+    },
+    [getUsername],
+  );
 
-  const rejoinGameHTTP = useCallback(async (gid) => {
-    try {
-      const username = getUsername();
-      const response = await gameApi.rejoin(gid, username);
-      const data = response.data;
-      setGameId(data.game_id);
-      setGameState(data.game_state);
-      connectWebSocket(data.game_id);
-      return data.game_id;
-    } catch (error) {
-      console.error("Error rejoining game:", error);
-      throw error;
-    }
-  }, [getUsername, connectWebSocket]);
+  const createGameHTTP = useCallback(
+    async (gameId, playerRole) => {
+      try {
+        const username = getUsername();
+        const response = await gameApi.create(gameId, username, playerRole);
+        const data = response.data;
+        setGameId(data.game_id);
+        setGameState(data.game_state);
+        connectWebSocket(data.game_id);
+        return data.game_id;
+      } catch (error) {
+        console.error("Error creating game:", error);
+        throw error;
+      }
+    },
+    [getUsername, connectWebSocket],
+  );
+
+  const joinGameHTTP = useCallback(
+    async (gameId, playerRole) => {
+      try {
+        const username = getUsername();
+        const response = await gameApi.join(gameId, username, playerRole);
+        const data = response.data;
+        console.log("Joining response: ", response.data);
+        setGameId(data.game_id);
+        // setGameState(data.game_state);
+        connectWebSocket(data.game_id);
+        return data.game_id;
+      } catch (error) {
+        console.error("Error joining game:", error);
+        throw error;
+      }
+    },
+    [getUsername, connectWebSocket],
+  );
+
+  const rejoinGameHTTP = useCallback(
+    async (gid) => {
+      try {
+        const username = getUsername();
+        const response = await gameApi.rejoin(gid, username);
+        const data = response.data;
+        setGameId(data.game_id);
+        // setGameState(data.game_state);
+        connectWebSocket(data.game_id);
+        return data.game_id;
+      } catch (error) {
+        console.error("Error rejoining game:", error);
+        throw error;
+      }
+    },
+    [getUsername, connectWebSocket],
+  );
 
   const quickMatchHTTP = useCallback(async () => {
     try {
@@ -122,7 +142,7 @@ export const WebSocketProvider = ({ children }) => {
       const response = await gameApi.quickMatch(username);
       const data = response.data;
       setGameId(data.game_id);
-      setGameState(data.game_state);
+      // setGameState(data.game_state);
       connectWebSocket(data.game_id);
       return data.game_id;
     } catch (error) {
@@ -161,11 +181,12 @@ export const WebSocketProvider = ({ children }) => {
 
       // determine which id to navigate with (use the value from the
       // payload first since the local state may not yet have updated)
-      const idToUse =
-        (newGameState.game_id || gameIdRef.current || gameId || "").replace(
-          "game_",
-          ""
-        );
+      const idToUse = (
+        newGameState.game_id ||
+        gameIdRef.current ||
+        gameId ||
+        ""
+      ).replace("game_", "");
 
       if (idToUse && !window.location.pathname.includes("/game/")) {
         navigate(`/game/${idToUse}`);

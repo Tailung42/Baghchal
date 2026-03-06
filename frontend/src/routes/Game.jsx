@@ -13,11 +13,13 @@ import BaseModal from "../components/ui/BaseModal";
 
 const Game = () => {
   const { username } = useUsername();
-  const { auth } = useAuth();
+  const { auth, isLoading } = useAuth();
   const {
     gameState,
     isConnected,
+    isInGame,
     joinGame,
+    rejoinGame,
     sendMove,
     exitGame,
     isGameInProgress,
@@ -67,14 +69,18 @@ const Game = () => {
   const intentionalDisconnect = useRef(false);
 
   useEffect(() => {
+    if (isLoading) return;
+
     if (gameId && !isConnected && !intentionalDisconnect.current) {
-      joinGame(gameId).finally(() => {
-        // once we've attempted a fresh join, clear the flag so future
-        // disconnects (network blips) can reconnect normally
-        intentionalDisconnect.current = false;
-      });
+      if (isInGame) {
+        console.log("Rejoining Game");
+        rejoinGame(gameId).then(() => (intentionalDisconnect.current = false));
+      } else {
+        console.log("Joining game");
+        joinGame(gameId).then(() => (intentionalDisconnect.current = false));
+      }
     }
-  }, [gameId, isConnected, joinGame]);
+  }, [isLoading, isConnected, joinGame, rejoinGame]);
 
   // Handle game state changes (sounds and winner modal)
   useEffect(() => {
@@ -101,12 +107,7 @@ const Game = () => {
         blocker.reset();
       }
     }
-  }, [
-    gameState,
-    playMoveSound,
-    playCaptureSound,
-    blocker,
-  ]);
+  }, [gameState, playMoveSound, playCaptureSound, blocker]);
 
   // Ensure user is authenticated
   useEffect(() => {

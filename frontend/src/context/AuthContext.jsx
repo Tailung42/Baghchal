@@ -1,23 +1,23 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { authApi } from '../api/client';
-import { authStorage } from '../utils/storage';
+import { createContext, useContext, useState, useEffect } from "react";
+import { authApi } from "../api/client";
+import { authStorage } from "../utils/storage";
 
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState({ isLoggedIn: false });
   const [isLoading, setIsLoading] = useState(true);
+  const userAuth = authStorage.getUserAuth();
+  const guestAuth = authStorage.getGuestAuth();
 
+  // # load stored user on mount
   useEffect(() => {
-    const userAuth = authStorage.getUserAuth();
-    const guestAuth = authStorage.getGuestAuth();
-
     if (userAuth?.isLoggedIn && userAuth.user) {
       setAuth({ isLoggedIn: true, user: userAuth.user });
     } else if (guestAuth?.guestId) {
       setAuth({ isLoggedIn: false, guestId: guestAuth.guestId });
     } else {
-      setAuth({ isLoggedIn: false });
+      setGuestId();
     }
     setIsLoading(false);
   }, []);
@@ -40,8 +40,8 @@ export function AuthProvider({ children }) {
     setAuth({ isLoggedIn: true, user: userData });
   };
 
-  const setGuestId = (guestId) => {
-    authStorage.setGuestAuth(guestId);
+  const setGuestId = () => {
+    const guestId = authStorage.setGuestAuth();
     setAuth({ isLoggedIn: false, guestId });
   };
 
@@ -51,7 +51,9 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ auth, isLoading, login, signup, googleAuth, setGuestId, logout }}>
+    <AuthContext.Provider
+      value={{ auth, isLoading, login, signup, googleAuth, setGuestId, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -60,7 +62,7 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

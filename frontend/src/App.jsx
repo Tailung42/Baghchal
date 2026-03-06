@@ -1,30 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "./App.css";
 import Game from "./routes/Game";
 import Layout from "./routes/Layout";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import UserProfile from "./routes/UserProfile";
 import Home from "./routes/Home";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext";
 import { WebSocketProvider } from "./context/WebSocketContext";
 import Rules from "./routes/Rules";
 import AuthModal from "./components/AuthModal";
-import { generateUsername } from "unique-username-generator";
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
-const GOOGLE_CLIENT_ID = "611135257481-5tv07uu56cf811lle2cdduubh43gu018.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID =
+  "611135257481-5tv07uu56cf811lle2cdduubh43gu018.apps.googleusercontent.com";
 
 function AppContent({ authModalOpen, setAuthModalOpen }) {
-  const { auth, setGuestId } = useAuth();
-
-  useEffect(() => {
-    if (!auth?.isLoggedIn && !auth?.guestId) {
-      const guestId = generateUsername("", "", 12);
-      setGuestId(guestId);
-      console.log("Guest ID:", guestId);
-    }
-  }, [auth?.isLoggedIn, auth?.guestId, setGuestId]);
-
   const router = createBrowserRouter([
     {
       path: "/",
@@ -71,7 +61,10 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
-        <AppContent authModalOpen={authModalOpen} setAuthModalOpen={setAuthModalOpen} />
+        <AppContent
+          authModalOpen={authModalOpen}
+          setAuthModalOpen={setAuthModalOpen}
+        />
       </AuthProvider>
     </GoogleOAuthProvider>
   );
