@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Piece from "./Piece";
-import ValidateMove from "./utilities/MoveValidation.js";
+import ValidateMove from "../utils/MoveValidation";
 import { useAuth } from "../hooks/useAuth";
 
 const Board = ({
