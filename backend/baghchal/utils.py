@@ -3,7 +3,7 @@ from .redis import get_game, set_game, get_all_games, delete_game
 from baghchal.models import Game
 from core.models import User
 import copy
-
+from datetime import datetime
 
 def get_initial_game_state():
     """Returns the initial state of BaghChal game."""
@@ -291,6 +291,7 @@ def store_game(game_id, game_state):
         winner_role=winner_role,
         total_moves=len(game_state["history"]),
         goats_captured=dead_goats,
+        created_at=datetime.now()
     )
     game.save()
 
