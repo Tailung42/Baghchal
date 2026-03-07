@@ -1,5 +1,6 @@
 from django.shortcuts import render, HttpResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 import uuid
 import random
@@ -23,10 +24,11 @@ def index(request):
 
 # Game endpoints
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def create_game(request):
     """Create a new game and initialize it in Redis"""
     try:
-        username = request.data.get("username")
+        username = request.user.username
         game_id = request.data.get("game_id")
 
         player_role = request.data.get("player_role", "tiger")
@@ -63,11 +65,12 @@ def create_game(request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def join_game(request):
     """Join an existing game"""
     try:
+        username = request.user.username
         game_id = request.data.get("game_id")
-        username = request.data.get("username")
 
         if not game_id or not username:
             return Response({"error": "Game ID and username required"}, status=400)
@@ -144,12 +147,17 @@ def join_game(request):
         return Response({"error": f"Failed to join game: {str(e)}"}, status=500)
 
 
+
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def rejoin_game(request):
+
+
+
     """Rejoin a game the user was already playing"""
     try:
         game_id = request.data.get("game_id")
-        username = request.data.get("username")
+        username = request.user.username
 
         if not game_id or not username:
             return Response({"error": "Game ID and username required"}, status=400)
@@ -189,13 +197,11 @@ def rejoin_game(request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def quick_match(request):
     """Find or create a game for quick match"""
     try:
-        username = request.data.get("username")
-        if not username:
-            return Response({"error": "Username required"}, status=400)
-
+        username = request.user.username
         # Get list of waiting games
         all_games = get_all_games()
         waiting_games = [

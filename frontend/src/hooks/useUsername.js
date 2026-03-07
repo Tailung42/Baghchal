@@ -1,10 +1,8 @@
-import { useAuth } from './useAuth';
+import { useAuth } from "./useAuth";
 
 export function useUsername() {
   const { auth } = useAuth();
 
-  const username = auth?.user?.username || auth?.guestId || '';
-  const isLoggedIn = auth?.isLoggedIn || false;
-
-  return { username, isLoggedIn };
+  const username = auth?.user?.username || auth?.guest.username || "";
+  return { username };
 }

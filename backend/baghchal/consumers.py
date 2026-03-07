@@ -2,7 +2,7 @@ from channels.generic.websocket import WebsocketConsumer
 import json
 from asgiref.sync import async_to_sync
 from urllib.parse import parse_qs
-
+from django.contrib.auth.models import AnonymousUser
 from .redis import (
     get_game,
     set_game,
@@ -36,8 +36,13 @@ class GameConsumer(WebsocketConsumer):
         # Get connection parameters (game must already exist from HTTP endpoint)
         query = parse_qs(self.scope["query_string"].decode())
         self.game_id = query.get("game_id", [None])[0]
-        self.username = query.get("username", [None])[0]
 
+        user = self.scope["user"]
+        if isinstance(user, AnonymousUser) or not user.is_authenticated:
+            self.close(code=4001)  # Custom close code for auth failure
+            return
+        self.username = user.username
+            
         try:
             self.validate_connection()
         except Exception as e:

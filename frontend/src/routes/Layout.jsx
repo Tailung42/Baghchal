@@ -150,7 +150,7 @@ function SideBar({ setAuthModalOpen }) {
               </div>
 
               <div className="text-text-muted text-sm">
-                {auth.isLoggedIn ? "Player" : "Not logged in"}
+                {auth.user ? "Player" : "Not logged in"}
               </div>
             </div>
           </div>
@@ -208,7 +208,7 @@ function SideBar({ setAuthModalOpen }) {
             onClick={handleLoginToggle}
             className="w-full bg-primary text-text-white px-6 py-3 rounded-lg hover:bg-primary-dark transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
           >
-            {auth.isLoggedIn ? "Logout" : "Login"}
+            {auth.user ? "Logout" : "Login"}
           </button>
         </div>
       </div>

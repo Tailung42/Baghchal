@@ -16,6 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
             "losses",
             "win_rate",
             "avatar_url",
+            "is_guest"
         ]
 
     def get_win_rate(self, obj):

@@ -5,54 +5,69 @@ import { authStorage } from "../utils/storage";
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
-  const [auth, setAuth] = useState({ isLoggedIn: false });
+  const [auth, setAuth] = useState({ user: null, guest: null });
   const [isLoading, setIsLoading] = useState(true);
-  const userAuth = authStorage.getUserAuth();
-  const guestAuth = authStorage.getGuestAuth();
+  const user = authStorage.getUser();
+  const guest = authStorage.getGuest();
 
   // # load stored user on mount
   useEffect(() => {
-    if (userAuth?.isLoggedIn && userAuth.user) {
-      setAuth({ isLoggedIn: true, user: userAuth.user });
-    } else if (guestAuth?.guestId) {
-      setAuth({ isLoggedIn: false, guestId: guestAuth.guestId });
+    if (user) {
+      setAuth((prev) => ({ ...prev, user: user, guest: guest }));
+    } else if (guest) {
+      setAuth((prev) => ({ ...prev, user: null, guest: guest }));
     } else {
-      setGuestId();
+      loginAsGuest();
     }
     setIsLoading(false);
   }, []);
 
   const login = async (username, password) => {
     const response = await authApi.login(username, password);
-    const userData = response.data.user_data;
-    authStorage.setUserAuth(userData);
-    setAuth({ isLoggedIn: true, user: userData });
+    handleLoginResponse(response);
   };
 
   const signup = async (formData) => {
-    await authApi.signup(formData);
+    const response = await authApi.signup(formData);
+    handleLoginResponse(response);
   };
 
   const googleAuth = async (token, mode) => {
     const response = await authApi.googleAuth(token, mode);
-    const userData = response.data.user_data;
-    authStorage.setUserAuth(userData);
-    setAuth({ isLoggedIn: true, user: userData });
+    handleLoginResponse(response);
   };
 
-  const setGuestId = () => {
-    const guestId = authStorage.setGuestAuth();
-    setAuth({ isLoggedIn: false, guestId });
+  const loginAsGuest = async () => {
+    const guestId = authStorage.setGuest();
+    const promise = await authApi.guestLogin(guestId);
+    const data = promise.data;
+    const guest = data.user_data;
+    authStorage.setGuest(guest);
+    authStorage.setToken(data.access, data.refresh);
+    setAuth((prev) => ({ ...prev, user: null, guest: guest }));
   };
 
+  const handleLoginResponse = (response) => {
+    const data = response.data;
+    const user = data.user_data;
+    authStorage.setToken(data.access, data.refresh);
+    setAuth((prev) => ({ ...prev, user: user, guest: null }));
+  };
   const logout = () => {
     authStorage.clearAll();
-    setAuth({ isLoggedIn: false });
+    setAuth({ user: null, guest: null });
   };
 
   return (
     <AuthContext.Provider
-      value={{ auth, isLoading, login, signup, googleAuth, setGuestId, logout }}
+      value={{
+        auth,
+        isLoading,
+        login,
+        signup,
+        googleAuth,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

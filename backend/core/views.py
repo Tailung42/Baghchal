@@ -6,6 +6,7 @@ from .models import User
 from .serializers import UserSerializer
 from google.oauth2 import id_token
 from google.auth.transport import requests
+from rest_framework_simplejwt.tokens import RefreshToken
 import os
 
 
@@ -42,10 +43,13 @@ def signup(request):
         print("unable to signup")
         return Response({"error": "unable to signup"}, status=400)
     user.save()
-
-    serializer = UserSerializer(user, request)
+    refresh = refreshtoken.for_user(user)
+    serializer = userserializer(user, request)
     print("successfully signup")
-    return Response({"message": "signup successful"}, status=201)
+    return response({"user_data": user,
+                     "access": str(refresh.access_token),
+                     "refresh": str(refresh)
+                     }, status=200)
 
 
 @api_view(["POST"])
@@ -61,11 +65,15 @@ def login(request):
     if user is None:
         print("no user")
         return Response({"error": "user doesn't exist"}, status=400)
+    
+    refresh = RefreshToken.for_user(user)
+    serializer = UserSerializer(user, request)
+     
+    return Response({"user_data": user,
+                     "access": str(refresh.access_token),
+                     "refresh": str(refresh)
+                     }, status=200)
 
-    serializer = UserSerializer(user)
-    print("_------------successfully logged in------------")
-    print(serializer.data)
-    return Response({"user_data": serializer.data}, status=200)
 
 @csrf_exempt
 @api_view(["POST"])
@@ -124,13 +132,40 @@ def google_auth(request):
             user.save()
 
         # send user data for signup and login both 
-        serializer = UserSerializer(user)
-        print(f"Google login successful: {email}")
-        return Response({"user_data": serializer.data,}, status=200)
+        serializer = UserSerializer(user, request)
+        refresh = RefreshToken.for_user(user) 
 
+        return Response({"user_data": user,
+                        "access": str(refresh.access_token),
+                        "refresh": str(refresh)
+                        }, status=200)
+    
     except ValueError as e:
         print(f"ValueError: {str(e)}")
         return Response({"error": f"Invalid Google token: {str(e)}"}, status=400)
     except Exception as e:
         print(f"Exception: {str(e)}")
         return Response({"error": f"Authentication failed: {str(e)}"}, status=500)
+
+@api_view(["POST"])
+def guest_login(request):
+    guest_id = request.data.get("guest_id")  # frontend sends its generated guestId string
+    if not guest_id:
+        return Response({"error": "guest_id required"}, status=400)
+    
+    # Get or create the guest user
+    user, created = User.objects.get_or_create(
+        username=guest_id,
+        defaults={"is_guest": True}
+    )
+    if created:
+        user.set_unusable_password()
+        user.save()
+    
+    refresh = RefreshToken.for_user(user)
+    serializer = UserSerializer(user)
+    return Response({
+        "user_data": serializer.data,
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+    }, status=200)

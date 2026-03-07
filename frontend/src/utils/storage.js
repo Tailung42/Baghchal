@@ -1,20 +1,30 @@
-const AUTH_STORAGE_KEY = "auth";
-const GUEST_STORAGE_KEY = "guestAuth";
+const USER_STORAGE_KEY = "user";
+const GUEST_STORAGE_KEY = "guest";
 const GAME_STORAGE_KEY = "gameId";
+const ACCESS_TOKEN_KEY = "access_token";
+const REFRESH_TOKEN_KEY = "refresh_token";
 import { generateUsername } from "unique-username-generator";
 
 export const authStorage = {
-  setUserAuth: (user) => {
-    localStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify({ isLoggedIn: true, user }),
-    );
+  getToken: () => {
+    const access = JSON.parse(localStorage.getItem(ACCESS_TOKEN_KEY));
+    const refresh = JSON.parse(localStorage.getItem(REFRESH_TOKEN_KEY));
+    return [access, refresh];
+  },
+
+  setToken: (access, refresh) => {
+    localStorage.setItem(ACCESS_TOKEN_KEY, JSON.stringify(access));
+    localStorage.setItem(REFRESH_TOKEN_KEY, JSON.stringify(refresh));
+  },
+
+  setUser: (user) => {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
     localStorage.removeItem(GUEST_STORAGE_KEY);
     return user;
   },
 
-  getUserAuth: () => {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+  getUser: () => {
+    const stored = localStorage.getItem(USER_STORAGE_KEY);
     if (!stored) return null;
     try {
       return JSON.parse(stored);
@@ -23,18 +33,18 @@ export const authStorage = {
     }
   },
 
-  clearUserAuth: () => {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+  clearUser: () => {
+    localStorage.removeItem(USER_STORAGE_KEY);
   },
 
-  setGuestAuth: () => {
+  setGuest: (guest) => {
     const guestId = generateUsername();
-    localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify({ guestId }));
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(guest));
+    localStorage.removeItem(USER_STORAGE_KEY);
     return guestId;
   },
 
-  getGuestAuth: () => {
+  getGuest: () => {
     const stored = localStorage.getItem(GUEST_STORAGE_KEY);
     if (!stored) return null;
     try {
@@ -44,13 +54,15 @@ export const authStorage = {
     }
   },
 
-  clearGuestAuth: () => {
+  clearGuest: () => {
     localStorage.removeItem(GUEST_STORAGE_KEY);
   },
 
   clearAll: () => {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
     localStorage.removeItem(GUEST_STORAGE_KEY);
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
   },
 };
 
