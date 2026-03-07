@@ -273,13 +273,24 @@ def to_user_coord(key):
 
 def store_game(game_id, game_state):
     print(f"stored game: {game_id}")
-    
+def store_game(game_id, game_state):
+    print(f"stored game: {game_id}")
+
+    winner_role = game_state["winner"]  # "goat" or "tiger"
+    dead_goats = game_state["deadGoatCount"]
+
+
+    goat_user = get_user_by_username(game_state["player"]["goat"])
+    tiger_user = get_user_by_username(game_state["player"]["tiger"])
+
+    # Save game record
     game = Game(
         game_id=game_id,
-        goat_player=get_user_by_username(game_state["player"]["goat"]),
-        tiger_player=get_user_by_username(game_state["player"]["tiger"]),
-        winning_player=get_user_by_username(game_state["player"][game_state["winner"]]),
-        move_data=game_state["history"],
+        goat_player=goat_user,
+        tiger_player=tiger_user,
+        winner_role=winner_role,
+        total_moves=len(game_state["history"]),
+        goats_captured=dead_goats,
     )
     game.save()
 

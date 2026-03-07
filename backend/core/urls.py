@@ -12,7 +12,7 @@ urlpatterns = [
     path("guest-login/", views.guest_login),
     path("token/refresh/", TokenRefreshView.as_view()),
     path("auth/google", views.google_auth),
-    path("game/", include("baghchal.urls")),
+    path("users/<int:uid>/", views.get_user)
 ]
 
 if settings.DEBUG:

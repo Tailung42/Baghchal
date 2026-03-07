@@ -8,6 +8,8 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 import os
+from .user_stats import get_user_stats
+import json
 
 
 
@@ -149,7 +151,7 @@ def google_auth(request):
         return Response({"error": f"Authentication failed: {str(e)}"}, status=500)
 
 @api_view(["POST"])
-def guest_login(request):
+def guest_login(request):  
     guest_id = request.data.get("guest_id")  # frontend sends its generated guestId string
     if not guest_id:
         return Response({"error": "guest_id required"}, status=400)
@@ -170,3 +172,20 @@ def guest_login(request):
         "access": str(refresh.access_token),
         "refresh": str(refresh),
     }, status=200)
+
+
+@api_view(["GET"])
+def get_user(request, uid):
+    try: 
+        user_id = int(uid)
+    except ValueError:
+        raise ValueError("user_id must be a number")
+    
+
+    user = User.objects.get(pk=user_id)
+
+    if not user:
+        return Response({"error": "User not found"}, status=404)
+    user_stats = get_user_stats(user)
+
+    return Response({json.dumps(user_stats)}, status=200)

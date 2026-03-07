@@ -3,7 +3,6 @@ from .models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
-    win_rate = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -11,16 +10,11 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "username",
-            "games_played",
-            "wins",
-            "losses",
-            "win_rate",
             "avatar_url",
             "is_guest"
         ]
 
-    def get_win_rate(self, obj):
-        return obj.win_rate()
+
 
     def get_avatar_url(self, obj):
         request = self.context.get("request")
