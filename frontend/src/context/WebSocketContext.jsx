@@ -48,39 +48,32 @@ export const WebSocketProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [gameId, setGameId] = useState(null);
 
-  const getUsername = useCallback(() => {
-    return auth.user ? auth.user?.username : auth.guest.username;
-  }, [auth]);
+  const connectWebSocket = useCallback((gameId) => {
+    if (!gameId) {
+      console.error("Cannot connect WebSocket without game ID");
+      return;
+    }
 
-  const connectWebSocket = useCallback(
-    (gameId) => {
-      if (!gameId) {
-        console.error("Cannot connect WebSocket without game ID");
-        return;
-      }
+    // make sure our internal ref/state knows the current id immediately
+    gameIdRef.current = gameId;
+    setGameId(gameId);
 
-      // make sure our internal ref/state knows the current id immediately
-      gameIdRef.current = gameId;
-      setGameId(gameId);
+    // Close existing connection
+    if (socketRef.current) socketRef.current.close();
 
-      // Close existing connection
-      if (socketRef.current) socketRef.current.close();
+    const params = new URLSearchParams({
+      game_id: gameId,
+    });
 
-      const params = new URLSearchParams({
-        game_id: gameId,
-      });
-
-      // create a new connection with access token
-      const [accessToken, _] = authStorage.getToken();
-      const ws = new WebSocket(`${baseSocketUrl}?${params}`, [accessToken]);
-      ws.onopen = handleOpen;
-      ws.onmessage = handleMessage;
-      ws.onclose = handleClose;
-      ws.onerror = handleError;
-      socketRef.current = ws;
-    },
-    [getUsername],
-  );
+    // create a new connection with access token
+    const [accessToken, _] = authStorage.getToken();
+    const ws = new WebSocket(`${baseSocketUrl}?${params}`, [accessToken]);
+    ws.onopen = handleOpen;
+    ws.onmessage = handleMessage;
+    ws.onclose = handleClose;
+    ws.onerror = handleError;
+    socketRef.current = ws;
+  });
 
   const createGameHTTP = useCallback(
     async (gameId, playerRole) => {

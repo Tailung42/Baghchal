@@ -51,6 +51,7 @@ export function AuthProvider({ children }) {
     const data = response.data;
     const user = data.user_data;
     authStorage.setToken(data.access, data.refresh);
+    authStorage.setUser(user);
     setAuth((prev) => ({ ...prev, user: user, guest: null }));
   };
   const logout = () => {

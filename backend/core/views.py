@@ -46,7 +46,8 @@ def signup(request):
     refresh = refreshtoken.for_user(user)
     serializer = userserializer(user, request)
     print("successfully signup")
-    return response({"user_data": user,
+    
+    return response({"user_data": serializer.data,
                      "access": str(refresh.access_token),
                      "refresh": str(refresh)
                      }, status=200)
@@ -69,7 +70,7 @@ def login(request):
     refresh = RefreshToken.for_user(user)
     serializer = UserSerializer(user, request)
      
-    return Response({"user_data": user,
+    return Response({"user_data": serializer.data,
                      "access": str(refresh.access_token),
                      "refresh": str(refresh)
                      }, status=200)
@@ -135,7 +136,7 @@ def google_auth(request):
         serializer = UserSerializer(user, request)
         refresh = RefreshToken.for_user(user) 
 
-        return Response({"user_data": user,
+        return Response({"user_data": serializer.data,
                         "access": str(refresh.access_token),
                         "refresh": str(refresh)
                         }, status=200)

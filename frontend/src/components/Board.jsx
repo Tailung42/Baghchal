@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Piece from "./Piece";
 import ValidateMove from "../utils/MoveValidation";
 import { useAuth } from "../hooks/useAuth";
+import { useUsername } from "../hooks/useUsername";
 
 const Board = ({
   board,
@@ -12,6 +13,7 @@ const Board = ({
   newPosition,
   previousPosition,
 }) => {
+  const username = useUsername();
   const { auth } = useAuth();
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 400, height: 400 });
@@ -72,8 +74,7 @@ const Board = ({
 
   // handle piece clicks
   const handlePieceClick = (row, col, pieceType) => {
-    if (![auth.user?.username, auth.guestId].includes(player[currentPlayer]))
-      return;
+    if (player[currentPlayer] === username) return;
 
     const pieceKey = `${row}-${col}`;
     handleSelection(row, col, pieceType);

@@ -111,7 +111,7 @@ const Game = () => {
 
   // Ensure user is authenticated
   useEffect(() => {
-    if (!(auth?.user || auth?.guestId)) {
+    if (!(auth?.user || auth?.guest)) {
       navigate("/");
     }
   }, [auth, navigate]);

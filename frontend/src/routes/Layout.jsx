@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Outlet } from "react-router-dom";
-
+import { useUsername } from "../hooks/useUsername";
 function Layout({ setAuthModalOpen }) {
   return (
     <div className="flex h-screen w-screen bg-bg-dark overflow-hidden">
@@ -22,6 +22,7 @@ function Layout({ setAuthModalOpen }) {
 export default Layout;
 
 function SideBar({ setAuthModalOpen }) {
+  const { username } = useUsername();
   const { auth, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -139,18 +140,18 @@ function SideBar({ setAuthModalOpen }) {
           </div>
 
           {/* User Profile Section */}
-          <div className="bg-bg-dark rounded-xl p-4 mb-8 border border-border-muted shadow-lg">
+          <div className="bg-bg-dark rounded-xl px-1 py-3 mb-8 border border-border-muted shadow-lg">
             <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary-dark rounded-full mx-auto mb-4 flex items-center justify-center text-text-white text-2xl font-bold shadow-lg">
-                {auth.user?.username?.[0]?.toUpperCase() || "G"}
+              <div className="w-15 h-15 bg-primary rounded-full mx-auto mb-4 flex items-center justify-center text-text-white text-2xl font-bold shadow-lg">
+                {username?.[0]?.toUpperCase() || "G"}
               </div>
 
-              <div className="text-text-white font-bold text-xl mb-1">
-                {auth.user?.username || "Guest Player"}
+              <div className=" text-text-white font-bold text-l mb-1">
+                {username}
               </div>
 
               <div className="text-text-muted text-sm">
-                {auth.user ? "Player" : "Not logged in"}
+                {auth.user ? "" : "Guest"}
               </div>
             </div>
           </div>
