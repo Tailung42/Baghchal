@@ -1,6 +1,8 @@
 import threading
 from .redis import get_game, set_game, get_all_games, delete_game
 from baghchal.models import Game
+from core.models import User
+import copy
 
 
 def get_initial_game_state():
@@ -29,25 +31,37 @@ def update_game_state(room_name, move):
     game_state = get_game(room_name)
     if not game_state:
         return None
-        
-    board = game_state["board"]
+    
+    new_game_state = apply_move(game_state, move)
 
-    current_player = game_state["currentPlayer"]
+    if check_game_over(new_game_state):
+        store_game(room_name, new_game_state) # in database
+        delete_game(room_name) # from redis
+    else: 
+        set_game(room_name, new_game_state)
+    return new_game_state
+
+def apply_move(game_state, move):
+    copy_game_state = copy.deepcopy(game_state)
+
+    board = copy_game_state["board"]
+
+    current_player = copy_game_state["currentPlayer"]
     move_type = move["moveType"]
     from_key = move.get("fromKey")
     to_key = move.get("toKey")
 
-    if not isvalid_move(game_state, move):
+    if not isvalid_move(copy_game_state, move):
         return None
 
     # update board with the move
-    game_state["isCaptured"] = False
+    copy_game_state["isCaptured"] = False
 
     if move_type == "place":
         board[to_key] = "goat"
-        game_state["unusedGoat"] -= 1
-        if game_state["unusedGoat"] == 0:
-            game_state["phase"] = "displacement"
+        copy_game_state["unusedGoat"] -= 1
+        if copy_game_state["unusedGoat"] == 0:
+            copy_game_state["phase"] = "displacement"
 
     elif move_type == "displace":
         piece = board.pop(from_key)
@@ -59,8 +73,8 @@ def update_game_state(room_name, move):
         mid_key = get_mid_key(from_key, to_key)
         if board.get(mid_key) == "goat":
             board.pop(mid_key)
-            game_state["deadGoatCount"] += 1
-            game_state["isCaptured"] = True
+            copy_game_state["deadGoatCount"] += 1
+            copy_game_state["isCaptured"] = True
 
     # add move to the history
     user_from = to_user_coord(from_key)
@@ -71,20 +85,14 @@ def update_game_state(room_name, move):
     else:
         history_entry = f"{current_player}: {user_from} -> {user_to}"
 
-    game_state["history"].append(history_entry)
+    copy_game_state["history"].append(history_entry)
 
     # switch player
-    game_state["currentPlayer"] = "tiger" if current_player == "goat" else "goat"
-    game_state["newPosition"] = to_key
-    game_state["previousPosition"] = from_key
+    copy_game_state["currentPlayer"] = "tiger" if current_player == "goat" else "goat"
+    copy_game_state["newPosition"] = to_key
+    copy_game_state["previousPosition"] = from_key
 
-    check_game_over(game_state)
-    
-    # Save the updated state back to Redis
-    set_game(room_name, game_state)
-
-    return game_state
-
+    return copy_game_state
 
 def isvalid_move(game_state, move):
     """Checks if a move is valid for given game state"""
@@ -264,12 +272,21 @@ def to_user_coord(key):
 
 
 def store_game(game_id, game_state):
+    print(f"stored game: {game_id}")
+    
     game = Game(
         game_id=game_id,
-        goat_player=game_state["player"]["goat"],
-        tiger_player=game_state["player"]["tiger"],
-        winning_layer=game_state["winner"],
+        goat_player=get_user_by_username(game_state["player"]["goat"]),
+        tiger_player=get_user_by_username(game_state["player"]["tiger"]),
+        winning_player=get_user_by_username(game_state["player"][game_state["winner"]]),
         move_data=game_state["history"],
     )
     game.save()
-    print("Game stored: ", game_id)
+
+def get_user_by_username(username):
+    try: 
+        user = User.objects.get(username=username)
+        if user: 
+            return user
+    except: 
+        raise ValueError(f"Unable to get the user with username: {username}")
