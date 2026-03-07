@@ -219,8 +219,8 @@ def cleanup_game_states():
     games = get_all_games()
     for game_id, game_state in games.items():
         # Remove finished games after delay
-        # TODO: store the game to the database
         if game_state.get("status") == "over":
+            store_game(game_id, game_state)
             schedule_game_removal(game_id, 30)
 
         # Remove truly abandoned games (no players at all)
@@ -263,13 +263,13 @@ def to_user_coord(key):
     return f"{r + 1}-{c + 1}"
 
 
-def store_game(game_id, gamestate):
+def store_game(game_id, game_state):
     game = Game(
         game_id=game_id,
-        goat_player=gamestate["player"]["goat"],
-        tiger_player=gamestate["player"]["tiger"],
-        winning_layer=gamestate["winner"],
-        move_data=gamestate["winner"],
+        goat_player=game_state["player"]["goat"],
+        tiger_player=game_state["player"]["tiger"],
+        winning_layer=game_state["winner"],
+        move_data=game_state["history"],
     )
     game.save()
     print("Game stored: ", game_id)
