@@ -1,5 +1,4 @@
 @import "tailwindcss";
-
 @theme {
   /* Primary Colors - Main brand colors */
   --color-primary: #f95e5e;
@@ -71,8 +70,85 @@
   --color-pattern-marble: #e0d7c3;
 }
 
+/* ─────────────────────────────────────────────
+   LIGHT / PASTEL COZY THEME
+   Apply with: <html data-theme="light"> or
+   <body data-theme="light">
+   ───────────────────────────────────────────── */
+[data-theme="light"] {
+  /* Primary — softened coral, still recognizable as your brand red */
+  --color-primary: #e8605a;
+  --color-primary-hover: #ec7570;
+  --color-primary-dark: #c44d48;
 
-/* Optional: Alternative themes */
+  /* Secondary — muted sage green instead of vivid lime */
+  --color-secondary: #6b9e78;
+  --color-secondary-dark: #4e7d5a;
+  --color-secondary-accent: #4a8f6e;
+
+  /* Text — warm dark ink on light backgrounds */
+  --color-text-light: #3d3530;
+  --color-text-white: #1a1714;
+  --color-text-muted: #8a8480;
+
+  /* Backgrounds — warm parchment palette from Design 2 */
+  --color-bg-dark: #f0ece4; /* page background */
+  --color-bg-darker: #e8e2d8; /* slightly deeper tint */
+  --color-bg-surface: #faf8f4; /* cards, modals */
+  --color-bg-surface-dark: #f2ede6; /* pressed/hover card state */
+  --color-bg-board: #e8dcc8; /* unchanged — board looks great as-is */
+
+  /* Borders — very subtle warm gray */
+  --color-border-light: rgba(0, 0, 0, 0.07);
+  --color-border-primary: #e8605a;
+  --color-border-muted: rgba(0, 0, 0, 0.1);
+
+  /* Strokes — warm brown tones, unchanged from original (board SVG) */
+  --color-stroke-board: #4a4845;
+  --color-stroke-dark: #8b7355;
+  --color-stroke-light: #a68a6a;
+
+  /* Pieces — same warm wood feel, fits the board */
+  --color-piece-bg: #e8dcc8;
+  --color-piece-stroke: #8b7355;
+  --color-piece-stroke-hover: #c07050;
+  --color-piece-hover-fill: #f5e6d3;
+  --color-piece-selected: #e8605a;
+  --color-piece-new: #6b9e78;
+  --color-piece-previous: #d4a030;
+  --color-piece-highlighted: #4a8f6e;
+
+  /* Status — all desaturated a touch for the soft vibe */
+  --color-status-success: #6b9e78;
+  --color-status-error: #e8605a;
+  --color-status-warning: #d4a030;
+  --color-status-info: #3d6b8f;
+
+  /* Game roles — warm coral tiger, sage goat */
+  --color-tiger: #c4663a;
+  --color-goat: #6b9e78;
+
+  /* Buttons */
+  --color-btn-primary: #e8605a;
+  --color-btn-primary-hover: #ec7570;
+  --color-btn-secondary-border: rgba(0, 0, 0, 0.12);
+  --color-btn-secondary-hover: #ede8e0;
+
+  /* Modal & Overlay */
+  --color-modal-bg: #faf8f4;
+  --color-modal-border: rgba(0, 0, 0, 0.08);
+
+  /* Accents */
+  --color-accent-amber: #d4a030;
+
+  /* Patterns — slightly lighter for light bg contrast */
+  --color-pattern-wood: #d4c4a8;
+  --color-pattern-marble: #ede6d8;
+}
+
+/* ─────────────────────────────────────────────
+   Optional: Alternative themes (unchanged)
+   ───────────────────────────────────────────── */
 [data-theme="forest"] {
   --color-primary: #34d399;
   --color-primary-hover: #6ee7b7;
