@@ -7,7 +7,6 @@ import {
   useCallback,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
 import { gameApi } from "../api/client";
 import { authStorage } from "../utils/storage";
 
@@ -38,7 +37,6 @@ export const useWebSocket = () => useContext(WebSocketContext);
 const baseSocketUrl = import.meta.env.VITE_BASE_WS_URL;
 
 export const WebSocketProvider = ({ children }) => {
-  const { auth } = useAuth();
   const navigate = useNavigate();
   const socketRef = useRef(null);
   // store the current game id in a ref so that callbacks can access it even
