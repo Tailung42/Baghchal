@@ -31,12 +31,13 @@ class GameConsumer(WebsocketConsumer):
 
     def connect(self):
         # Store completed games and remove abandoned ones
-        cleanup_game_states()
+        # cleanup_game_states()
 
         # Get connection parameters (game must already exist from HTTP endpoint)
         query = parse_qs(self.scope["query_string"].decode())
         self.game_id = query.get("game_id", [None])[0]
 
+        # validate the user 
         user = self.scope["user"]
         if isinstance(user, AnonymousUser) or not user.is_authenticated:
             self.close(code=4001)  # Custom close code for auth failure
@@ -100,14 +101,14 @@ class GameConsumer(WebsocketConsumer):
         game_state = get_game(self.room_group_name)
         if not game_state:
             raise ValueError("Game state not found")
-
-        print(f"Sending initial game state to {self.username}")
-        self.send(
-            text_data=json.dumps(
-                {"message": {"type": "update", "game_state": game_state}}
-            )
+    
+    
+        # Broadcast updated state to all players in the game
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name,
+            {"type": "send_game_state", "game_state": game_state},
         )
-
+        
     def receive(self, text_data):
         """Handle incoming WebSocket messages"""
         try:
@@ -179,7 +180,9 @@ class GameConsumer(WebsocketConsumer):
     def disconnect(self, close_code):
         """Handle WebSocket disconnect"""
         print(f"Player {self.username} disconnected from {self.game_id} (code: {close_code})")
-
+         
+        #  clean up game states when someone self.disconnects
+        cleanup_game_states()
         # Leave room group
         if hasattr(self, "room_group_name"):
             async_to_sync(self.channel_layer.group_discard)(

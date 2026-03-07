@@ -121,20 +121,6 @@ def join_game(request):
 
         set_game(room_group_name, game_state)
 
-        # # broadcast to any connected clients that state changed (player joined)
-        # try:
-        #     from asgiref.sync import async_to_sync
-        #     from channels.layers import get_channel_layer
-
-        #     channel_layer = get_channel_layer()
-        #     async_to_sync(channel_layer.group_send)(
-        #         room_group_name,
-        #         {"type": "send_game_state", "game_state": game_state},
-        #     )
-        # except Exception as exc:
-        #     # logging failure but don't break the response
-        #     print(f"Failed to broadcast join update: {exc}")
-
         print(f"User {username} joined game {room_group_name} as {available_role}")
         return Response(
             {
@@ -230,19 +216,6 @@ def quick_match(request):
                 # Ensure game_id is set
                 game_state["game_id"] = f"game_{game_id}"
                 set_game(f"game_{game_id}", game_state)
-
-                # broadcast update to existing connection(s)
-                try:
-                    from asgiref.sync import async_to_sync
-                    from channels.layers import get_channel_layer
-
-                    channel_layer = get_channel_layer()
-                    async_to_sync(channel_layer.group_send)(
-                        f"game_{game_id}",
-                        {"type": "send_game_state", "game_state": game_state},
-                    )
-                except Exception as exc:
-                    print(f"Failed to broadcast quick-match join: {exc}")
 
                 print(f"User {username} joined quick match game {game_id}")
                 return Response(
