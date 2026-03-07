@@ -6,14 +6,14 @@ import { useUsername } from "../hooks/useUsername";
 
 const Board = ({
   board,
-  currentPlayer,
+  turn,
   phase,
   onMoveSend,
   player,
   newPosition,
   previousPosition,
 }) => {
-  const username = useUsername();
+  const { username } = useUsername();
   const { auth } = useAuth();
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 400, height: 400 });
@@ -74,7 +74,7 @@ const Board = ({
 
   // handle piece clicks
   const handlePieceClick = (row, col, pieceType) => {
-    if (player[currentPlayer] === username) return;
+    if (!(player[turn] === username)) return;
 
     const pieceKey = `${row}-${col}`;
     handleSelection(row, col, pieceType);
@@ -83,14 +83,14 @@ const Board = ({
     const toKey = pieceKey;
     const moveType =
       ValidateMove(fromKey, toKey, board[boardState.activePiece], board) ||
-      (phase == "placement" && !board[pieceKey] && currentPlayer == "goat"
+      (phase == "placement" && !board[pieceKey] && turn == "goat"
         ? "place"
         : "");
 
     if (moveType) {
       const move = {
         moveType: moveType,
-        currentPlayer: currentPlayer,
+        currentPlayer: turn,
         pieceType: board[boardState.activePiece],
         fromKey: fromKey,
         toKey: toKey,
@@ -258,7 +258,7 @@ const Board = ({
 
     const isValidSelection = (pieceKey, pieceType) => {
       // goat logic
-      if (currentPlayer === "goat") {
+      if (turn === "goat") {
         if (phase === "placement" && pieceType === null) {
           return true;
         } else if (phase === "displacement" && pieceType == "goat") {
@@ -273,7 +273,7 @@ const Board = ({
         }
       }
       // tiger logic
-      if (currentPlayer === "tiger") {
+      if (turn === "tiger") {
         if (pieceType === "tiger") {
           setboardState((prev) => ({ ...prev, activePiece: pieceKey }));
           return true;

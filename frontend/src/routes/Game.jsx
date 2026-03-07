@@ -185,7 +185,7 @@ const Game = () => {
         <div className="flex-1 flex justify-center items-center min-h-0">
           <Board
             board={gameState.board}
-            currentPlayer={gameState.currentPlayer}
+            turn={gameState.currentPlayer}
             phase={gameState.phase}
             onMoveSend={handleMoveSend}
             player={gameState.player}
