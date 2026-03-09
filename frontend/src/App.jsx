@@ -40,6 +40,10 @@ function AppContent({ authModalOpen, setAuthModalOpen }) {
           path: "rules",
           element: <Rules />,
         },
+        {
+          path: ":username",
+          element: <UserProfile />,
+        },
       ],
     },
   ]);
