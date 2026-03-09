@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 import os
 from .user_stats import get_user_stats
 import json
+from baghchal.utils import get_user_by_username
 
 
 
@@ -175,17 +176,11 @@ def guest_login(request):
 
 
 @api_view(["GET"])
-def get_user(request, uid):
-    try: 
-        user_id = int(uid)
-    except ValueError:
-        raise ValueError("user_id must be a number")
+def get_user(request, username):
+    if not username:
+        return Response({"error":"Have not provided proper username"}, status=400)
     
-
-    user = User.objects.get(pk=user_id)
-
-    if not user:
-        return Response({"error": "User not found"}, status=404)
+    user = get_user_by_username(username)
     user_stats = get_user_stats(user)
 
     return Response({json.dumps(user_stats)}, status=200)
