@@ -47,4 +47,8 @@ export const gameApi = {
   quickMatch: () => api.post("game/quick-match/"),
 };
 
+export const userApi = {
+  getProfile: (username) => api.get(`users/${username}/`),
+};
+
 export default api;

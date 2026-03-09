@@ -140,7 +140,13 @@ function SideBar({ setAuthModalOpen }) {
           </div>
 
           {/* User Profile Section */}
-          <div className="bg-bg-dark rounded-xl px-1 py-3 mb-8 border border-border-muted shadow-lg">
+          <div
+            onClick={() => {
+              navigate(`/${username}`);
+              setIsMobileMenuOpen(false);
+            }}
+            className="bg-bg-dark rounded-xl px-1 py-3 mb-8 border border-border-muted hover:-translate-y-1 hover:bg-bg-surface"
+          >
             <div className="text-center">
               <div className="w-15 h-15 bg-primary rounded-full mx-auto mb-4 flex items-center justify-center text-text-white text-2xl font-bold shadow-lg">
                 {username?.[0]?.toUpperCase() || "G"}

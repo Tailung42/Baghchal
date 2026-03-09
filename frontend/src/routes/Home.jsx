@@ -112,7 +112,7 @@ const GameModal = ({ isOpen, onClose, mode }) => {
 
   const generateGameId = () => {
     let gameid = crypto.randomUUID().substring(0, GameIdLength);
-   
+
     console.log("Generating Game: ", gameid);
     return gameid;
   };
@@ -217,9 +217,7 @@ const GameModal = ({ isOpen, onClose, mode }) => {
             placeholder="Paste Game ID here..."
           />
 
-          {joinError && (
-            <p className="text-red-400 text-sm">{joinError}</p>
-          )}
+          {joinError && <p className="text-red-400 text-sm">{joinError}</p>}
 
           <PrimaryButton
             onClick={handleJoin}
