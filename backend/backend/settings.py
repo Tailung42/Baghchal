@@ -31,8 +31,7 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    "baghchal.fly.dev",
-    "baghchal-1.onrender.com",
+    "baghchal-server.onrender.com",
 ]
 
 
@@ -68,8 +67,10 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://baghchal-2srv.onrender.com",
     "https://baghchal-snowy.vercel.app",
+    "https://baghchal-bhij.onrender.com",
+    "https://bagh-chal.onrender.com"
+
 ]
 
 CORS_ALLOW_HEADERS = [
