@@ -152,27 +152,30 @@ def google_auth(request):
         return Response({"error": f"Authentication failed: {str(e)}"}, status=500)
 
 @api_view(["POST"])
-def guest_login(request):  
-    guest_id = request.data.get("guest_id")  # frontend sends its generated guestId string
-    if not guest_id:
-        return Response({"error": "guest_id required"}, status=400)
-    
-    # Get or create the guest user
-    user, created = User.objects.get_or_create(
-        username=guest_id,
-        defaults={"is_guest": True}
-    )
-    if created:
-        user.set_unusable_password()
-        user.save()
-    
-    refresh = RefreshToken.for_user(user)
-    serializer = UserSerializer(user)
-    return Response({
-        "user_data": serializer.data,
-        "access": str(refresh.access_token),
-        "refresh": str(refresh),
-    }, status=200)
+def guest_login(request):
+    try: 
+        guest_id = request.data.get("guest_id")  # frontend sends its generated guestId string
+        if not guest_id:
+            return Response({"error": "guest_id required"}, status=400)
+        
+        # Get or create the guest user
+        user, created = User.objects.get_or_create(
+            username=guest_id,
+            defaults={"is_guest": True}
+        )
+        if created:
+            user.set_unusable_password()
+            user.save()
+        
+        refresh = RefreshToken.for_user(user)
+        serializer = UserSerializer(user)
+        return Response({
+            "user_data": serializer.data,
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+        }, status=200)
+    except Exception as e:
+        return Response({"error":f"unable to login as guest, {e}"}, status=500)
 
 
 @api_view(["GET"])
