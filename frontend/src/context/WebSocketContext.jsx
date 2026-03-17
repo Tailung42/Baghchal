@@ -128,11 +128,10 @@ export const WebSocketProvider = ({ children }) => {
   const quickMatchHTTP = useCallback(async () => {
     try {
       const response = await gameApi.quickMatch();
-      const data = response.data;
-      setGameId(data.game_id);
-      // setGameState(data.game_state);
-      connectWebSocket(data.game_id);
-      return data.game_id;
+      const gameId = response.data.game_id;
+      setGameId(gameId);
+      connectWebSocket(gameId);
+      return gameId;
     } catch (error) {
       console.error("Error finding quick match:", error);
       throw error;
