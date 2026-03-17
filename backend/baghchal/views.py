@@ -237,8 +237,6 @@ def quick_match(request):
         return Response(
             {
                 "game_id": game_id,
-                "play_as": "tiger",
-                "game_state": initial_state,
             },
             status=201,
         )

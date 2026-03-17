@@ -8,7 +8,7 @@ import os
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
 # Initialize Redis client
-redis_client = redis.from_url(REDIS_URL)
+redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 
 # Key prefix for all game states
 GAME_KEY_PREFIX = "game:"
