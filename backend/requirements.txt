@@ -1,3 +1,4 @@
+adrf==0.1.12
 asgiref==3.9.1
 attrs==25.3.0
 autobahn==24.4.2
