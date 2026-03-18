@@ -46,11 +46,11 @@ def signup(request):
         print("unable to signup")
         return Response({"error": "unable to signup"}, status=400)
     user.save()
-    refresh = refreshtoken.for_user(user)
-    serializer = userserializer(user, request)
+    refresh = RefreshToken.for_user(user)
+    serializer = UserSerializer(user, request)
     print("successfully signup")
     
-    return response({"user_data": serializer.data,
+    return Response({"user_data": serializer.data,
                      "access": str(refresh.access_token),
                      "refresh": str(refresh)
                      }, status=200)
