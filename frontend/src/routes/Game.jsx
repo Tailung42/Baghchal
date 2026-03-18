@@ -36,8 +36,7 @@ const Game = () => {
 
 
   let { gameId } = useParams();
-  gameId = gameId.replace("game_", "");
-
+  
   // Block in-app navigation
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
