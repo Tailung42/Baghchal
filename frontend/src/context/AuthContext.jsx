@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { authApi } from "../api/client";
 import { authStorage } from "../utils/storage";
+import { generateUsername } from "unique-username-generator";
 
 const AuthContext = createContext(undefined);
 
@@ -38,13 +39,13 @@ export function AuthProvider({ children }) {
   };
 
   const loginAsGuest = async () => {
-    const guestId = authStorage.setGuest();
+    const guestId = generateUsername();
     const promise = await authApi.guestLogin(guestId);
     const data = promise.data;
-    const guest = data.user_data;
-    authStorage.setGuest(guest);
+    const guest_user = data.user_data;
+    authStorage.setGuest(guest_user);
     authStorage.setToken(data.access, data.refresh);
-    setAuth((prev) => ({ ...prev, user: null, guest: guest }));
+    setAuth((prev) => ({ ...prev, user: null, guest: guest_user }));
   };
 
   const handleLoginResponse = (response) => {

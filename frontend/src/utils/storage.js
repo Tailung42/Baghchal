@@ -38,10 +38,9 @@ export const authStorage = {
   },
 
   setGuest: (guest) => {
-    const guestId = generateUsername();
     localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(guest));
     localStorage.removeItem(USER_STORAGE_KEY);
-    return guestId;
+    return true;
   },
 
   getGuest: () => {
