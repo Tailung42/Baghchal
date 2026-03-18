@@ -49,7 +49,9 @@ INSTALLED_APPS = [
     "baghchal",
     "rest_framework",
     "core",
-    "corsheaders",]
+    "corsheaders",
+    "adrf",
+    ]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

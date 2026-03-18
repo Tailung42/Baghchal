@@ -1,9 +1,10 @@
 import threading
-from .redis import get_game, set_game, get_all_games, delete_game
+from .redis import async_get_game, async_set_game, async_get_all_games, async_delete_game
 from baghchal.models import Game
 from core.models import User
 import copy
 from datetime import datetime
+import asyncio
 
 def get_initial_game_state():
     """Returns the initial state of BaghChal game."""
@@ -26,19 +27,21 @@ def get_initial_game_state():
     }
 
 
-def update_game_state(room_name, move):
-    """applies the move to the game state of id :room_name if the move is valid"""
-    game_state = get_game(room_name)
+async def async_update_game_state(room_name, move):
+    game_state = await async_get_game(room_name)
     if not game_state:
         return None
     
     new_game_state = apply_move(game_state, move)
+    if new_game_state is None:
+        return None
 
     if check_game_over(new_game_state):
-        store_game(room_name, new_game_state) # in database
-        delete_game(room_name) # from redis
-    else: 
-        set_game(room_name, new_game_state)
+        asyncio.create_task(async_store_game(room_name, new_game_state))
+        asyncio.create_task(async_delete_game(room_name))
+    else:
+        asyncio.create_task(async_set_game(room_name, new_game_state))
+
     return new_game_state
 
 def apply_move(game_state, move):
@@ -222,18 +225,18 @@ def can_capture(pos, board):
     return False
 
 
-def cleanup_game_states():
+async def async_cleanup_game_states():
     """Removes completed or abandoned games from Redis"""
-    games = get_all_games()
+    games = await async_get_all_games()
     for game_id, game_state in games.items():
         # Remove finished games after delay
         if game_state.get("status") == "over":
-            store_game(game_id, game_state)
-            schedule_game_removal(game_id, 30)
+            asyncio.create_task(async_store_game(game_id, game_state))
+            asyncio.create_task(async_schedule_game_removal(game_id, 30))
 
         # Remove truly abandoned games (no players at all)
         elif not any(game_state.get("player", {}).values()):
-            schedule_game_removal(game_id)
+            asyncio.create_task(async_schedule_game_removal(game_id))
 
         # one player left during ongoing game
         elif game_state.get("status") == "ongoing":
@@ -243,11 +246,11 @@ def cleanup_game_states():
                 pass
 
 
-def schedule_game_removal(game_id, delay=0):
+async def async_schedule_game_removal(game_id, delay=0):
     """Schedule a game for removal from Redis after delay seconds"""
     def remove_game():
         print("Removing Game: ", game_id)
-        delete_game(game_id)
+        async_delete_game(game_id)
 
     # Run deletion in background thread
     timer = threading.Timer(delay, remove_game)
@@ -271,17 +274,14 @@ def to_user_coord(key):
     return f"{r + 1}-{c + 1}"
 
 
-def store_game(game_id, game_state):
-    print(f"stored game: {game_id}")
-def store_game(game_id, game_state):
+async def async_store_game(game_id, game_state):
     print(f"stored game: {game_id}")
 
     winner_role = game_state["winner"]  # "goat" or "tiger"
     dead_goats = game_state["deadGoatCount"]
-
-
-    goat_user = get_user_by_username(game_state["player"]["goat"])
-    tiger_user = get_user_by_username(game_state["player"]["tiger"])
+    
+    goat_user = await asyncio.to_thread(get_user_by_username, game_state["player"]["goat"])
+    tiger_user = await asyncio.to_thread(get_user_by_username, game_state["player"]["tiger"])
 
     # Save game record
     game = Game(
@@ -293,12 +293,10 @@ def store_game(game_id, game_state):
         goats_captured=dead_goats,
         created_at=datetime.now()
     )
-    game.save()
+    await asyncio.to_thread(game.save)
 
 def get_user_by_username(username):
     try: 
         user = User.objects.get(username=username)
-        if user: 
-            return user
-    except: 
+    except User.DoesNotExist:
         raise ValueError(f"Unable to get the user with username: {username}")

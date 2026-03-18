@@ -2,19 +2,19 @@
 Game state management using Redis for persistence and multi-instance support.
 """
 import json
-import redis
+import redis.asyncio as aioredis
 import os
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
 # Initialize Redis client
-redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+async_redis_client = aioredis.from_url(REDIS_URL, decode_responses=True)
 
 # Key prefix for all game states
 GAME_KEY_PREFIX = "game:"
 
 
-def get_game(game_id: str) -> dict | None:
+async def async_get_game(game_id: str) -> dict | None:
     """
     Retrieve a game state from Redis.
     
@@ -24,18 +24,16 @@ def get_game(game_id: str) -> dict | None:
     Returns:
         Dictionary with game state, or None if not found
     """
+
     try:
         key = f"{GAME_KEY_PREFIX}{game_id}"
-        data = redis_client.get(key)
-        if data is not None:
-            return json.loads(data)
-        return None
+        data = await async_redis_client.get(key)
+        return json.loads(data) if data else None
     except Exception as e:
-        print(f"Error getting game state from Redis: {e}")
+        print(f"Error getting game: {e}")
         return None
 
-
-def set_game(game_id: str, game_state: dict, ttl: int | None = None) -> bool:
+async def async_set_game(game_id: str, game_state: dict) -> bool:
     """
     Store a game state in Redis.
     
@@ -47,18 +45,16 @@ def set_game(game_id: str, game_state: dict, ttl: int | None = None) -> bool:
     Returns:
         True if successful, False otherwise
     """
+
     try:
         key = f"{GAME_KEY_PREFIX}{game_id}"
-        redis_client.set(key, json.dumps(game_state))
-        if ttl:
-            redis_client.expire(key, ttl)
+        await async_redis_client.set(key, json.dumps(game_state))
         return True
     except Exception as e:
-        print(f"Error setting game state in Redis: {e}")
+        print(f"Error setting game: {e}")
         return False
-
-
-def delete_game(game_id: str) -> bool:
+    
+async def async_delete_game(game_id: str) -> bool:
     """
     Delete a game state from Redis.
     
@@ -70,14 +66,13 @@ def delete_game(game_id: str) -> bool:
     """
     try:
         key = f"{GAME_KEY_PREFIX}{game_id}"
-        result = redis_client.delete(key)
+        result = await async_redis_client.delete(key)
         return result > 0
     except Exception as e:
-        print(f"Error deleting game state from Redis: {e}")
+        print(f"Error deleting game: {e}")
         return False
-
-
-def get_all_games() -> dict[str, dict]:
+    
+async def async_get_all_games() -> dict[str, dict]:
     """
     Retrieve all game states from Redis.
     
@@ -86,11 +81,11 @@ def get_all_games() -> dict[str, dict]:
     """
     try:
         pattern = f"{GAME_KEY_PREFIX}*"
-        keys = redis_client.keys(pattern)
+        keys = await async_redis_client.keys(pattern)
         games = {}
         for key in keys:
             game_id = key.replace(GAME_KEY_PREFIX, "")
-            data = redis_client.get(key)
+            data = await async_redis_client.get(key)
             if data:
                 games[game_id] = json.loads(data)
         return games
@@ -98,8 +93,7 @@ def get_all_games() -> dict[str, dict]:
         print(f"Error retrieving all games from Redis: {e}")
         return {}
 
-
-def game_exists(game_id: str) -> bool:
+async def async_game_exists(game_id: str) -> bool:
     """
     Check if a game exists in Redis.
     
@@ -111,7 +105,7 @@ def game_exists(game_id: str) -> bool:
     """
     try:
         key = f"{GAME_KEY_PREFIX}{game_id}"
-        return redis_client.exists(key) > 0
+        return await async_redis_client.exists(key) > 0
     except Exception as e:
-        print(f"Error checking if game exists: {e}")
+        print(f"Error checking game exists: {e}")
         return False
