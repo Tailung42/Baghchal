@@ -66,7 +66,7 @@ export const authStorage = {
 };
 
 export const gameStorage = {
-  isInGame: sessionStorage.getItem(GAME_STORAGE_KEY, null) ? true : false,
+  isInGame: () => (!!sessionStorage.getItem(GAME_STORAGE_KEY)),
 
   setGame: (gameId) => {
     sessionStorage.setItem(GAME_STORAGE_KEY, gameId);

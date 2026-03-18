@@ -31,6 +31,9 @@ const Game = () => {
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [playMoveSound] = useSound(moveSound);
   const [playCaptureSound] = useSound(captureSound);
+  const intentionalDisconnect = useRef(false);
+
+
 
   let { gameId } = useParams();
   gameId = gameId.replace("game_", "");
@@ -66,22 +69,26 @@ const Game = () => {
   // Handle joining via url or reconnecting after an accidental disconnect.
   // We guard against rejoining when we purposely called `exitGame` (e.g. user
   // clicked "leave" or finished a match).  A ref tracks that intent.
-  const intentionalDisconnect = useRef(false);
+useEffect(() => {
+  if (isLoading || !gameId || isConnected || intentionalDisconnect.current){
+    return;
+  }
 
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (gameId && !isConnected && !intentionalDisconnect.current) {
-      if (isInGame) {
-        console.log("Rejoining Game");
-        rejoinGame(gameId).then(() => (intentionalDisconnect.current = false));
-      } else {
-        console.log("Joining game");
-        joinGame(gameId).then(() => (intentionalDisconnect.current = false));
-      }
+  if (isInGame()) {
+      console.log("rejoin attempt");
+      rejoinGame(gameId)
+        .then(() => {
+          intentionalDisconnect.current = false;
+        })
     }
-  }, [isLoading, isConnected, joinGame, rejoinGame]);
-
+    else {
+      console.log("join attempt");
+      joinGame(gameId)
+            .then(() => {
+              intentionalDisconnect.current = false;
+            })
+    }
+}, [isLoading,gameId, isConnected]);
   // Handle game state changes (sounds and winner modal)
   useEffect(() => {
     if (!gameState) return;
