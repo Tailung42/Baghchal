@@ -12,6 +12,9 @@ export function useGame() {
     disconnect,
     gameState,
     isConnected,
+    optimisticState,
+    updateOptimisticState,
+    clearOptimisticState,
   } = useWebSocket();
 
   const createGame = useCallback(
@@ -91,5 +94,8 @@ export function useGame() {
     sendMove,
     exitGame,
     isGameInProgress,
+    optimisticState,
+    updateOptimisticState,
+    clearOptimisticState,
   };
 }
