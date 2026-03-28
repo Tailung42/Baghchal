@@ -12,7 +12,7 @@ from .redis import (
     async_get_all_games,
     async_game_exists,
 )
-from .utils import get_initial_game_state
+from .game_engine import get_initial_game_state
 
 GAME_ID_LENGTH = 8
 GAME_STATUS_WAITING = "waiting"
