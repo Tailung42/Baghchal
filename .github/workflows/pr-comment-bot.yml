@@ -1,0 +1,40 @@
+name: PR Comment Bot
+
+on: 
+  pull_request:
+    types: [opened, closed]
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Add comment to PR
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const action = context.payload.action;
+
+            let message = "";
+
+            if (action === "opened") {
+              message = `👋 Thanks for opening this PR, @${pr.user.login}! We'll review it soon.`;
+            }
+
+            if (action === "closed") {
+              if (pr.merged) {
+                message = `🎉 This PR has been merged. Great work, @${pr.user.login}!\nPlease ⭐ the repo if you haven't already, Thank you!`;
+              } else {
+                message = `❌ This PR was closed without merging. Thank you for your effort`;
+              }
+            }
+
+            if (message) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: message
+              });
+            }
