@@ -132,11 +132,6 @@ REDIS_DB=0
 GOOGLE_CLIENT_ID=your-google-client-id
 ```
 
-Generate a secret key:
-```bash
-python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-```
-
 ---
 
 ## Project Structure
