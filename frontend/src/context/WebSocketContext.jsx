@@ -210,6 +210,7 @@ export const WebSocketProvider = ({ children }) => {
         send,
         disconnect,
         gameState,
+        setGameState,
         isConnected,
         gameId,
       }}

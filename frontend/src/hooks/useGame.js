@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import applyMove from "../utils/applyMove";
 import { useWebSocket } from "../context/WebSocketContext";
 import { gameStorage } from "../utils/storage";
 
@@ -11,6 +12,7 @@ export function useGame() {
     send,
     disconnect,
     gameState,
+    setGameState,
     isConnected,
   } = useWebSocket();
 
@@ -65,9 +67,15 @@ export function useGame() {
 
   const sendMove = useCallback(
     (move) => {
+      // Optimistically update the local game state before the server responds.
+      // This eliminates the perceived lag from the round-trip to the server.
+      const optimisticState = applyMove(gameState, move);
+      if (optimisticState) {
+        setGameState(optimisticState);
+      }
       send(JSON.stringify({ message: { type: "newMove", move } }));
     },
-    [send],
+    [send, gameState, setGameState],
   );
 
   const exitGame = useCallback(() => {
