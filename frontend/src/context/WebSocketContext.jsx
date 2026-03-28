@@ -9,6 +9,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { gameApi } from "../api/client";
 import { authStorage } from "../utils/storage";
+import { compareGameStates } from "../utils/GameUtils";
 
 const initialGameState = {
   board: {
@@ -39,12 +40,11 @@ const baseSocketUrl = import.meta.env.VITE_BASE_WS_URL;
 export const WebSocketProvider = ({ children }) => {
   const navigate = useNavigate();
   const socketRef = useRef(null);
-  // store the current game id in a ref so that callbacks can access it even
-  // if state hasn't updated yet
   const gameIdRef = useRef(null);
   const [gameState, setGameState] = useState(initialGameState);
   const [isConnected, setIsConnected] = useState(false);
   const [gameId, setGameId] = useState(null);
+  const [optimisticState, setOptimisticState] = useState(null);
 
   const connectWebSocket = useCallback((gameId) => {
     if (!gameId) {
@@ -154,6 +154,14 @@ export const WebSocketProvider = ({ children }) => {
     setIsConnected(false);
   }, []);
 
+  const updateOptimisticState = useCallback((newState) => {
+    setOptimisticState(newState);
+  }, []);
+
+  const clearOptimisticState = useCallback(() => {
+    setOptimisticState(null);
+  }, []);
+
   const handleOpen = () => {
     setIsConnected(true);
     console.log("WebSocket connected");
@@ -164,10 +172,15 @@ export const WebSocketProvider = ({ children }) => {
     const newGameState = data.message?.game_state;
 
     if (newGameState) {
+      if (optimisticState && !compareGameStates(optimisticState, newGameState)) {
+        // TODO: Handle state reconciliation - server state differs from optimistic state
+        console.warn("Server state differs from optimistic state. Reconciliation needed.");
+      } else {
+        clearOptimisticState();
+      }
+
       setGameState(newGameState);
 
-      // determine which id to navigate with (use the value from the
-      // payload first since the local state may not yet have updated)
       const idToUse = (
         newGameState.game_id ||
         gameIdRef.current ||
@@ -212,6 +225,9 @@ export const WebSocketProvider = ({ children }) => {
         gameState,
         isConnected,
         gameId,
+        optimisticState,
+        updateOptimisticState,
+        clearOptimisticState,
       }}
     >
       {children}
