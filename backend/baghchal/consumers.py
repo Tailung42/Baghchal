@@ -7,7 +7,9 @@ from .redis import (
     async_set_game,
     async_game_exists
 )
-from .utils import async_update_game_state, async_cleanup_game_states
+# TODO: need to clean up game state at some point but when? 
+from .game_engine import async_update_game_state, async_cleanup_game_states
+
 
 
 class GameStatus:

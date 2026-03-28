@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 import os
 from .user_stats import get_user_stats
 import json
-from baghchal.utils import get_user_by_username
+from baghchal.game_engine import get_user_by_username
 
 
 
