@@ -101,6 +101,7 @@ start_backend() {
 
     # Run migrations
     print_status "Running database migrations..."
+    python manage.py makemigrations
     python manage.py migrate
 
     # Start Django server with Daphne in background
