@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ad;fja;dlfja;ldfja;lfkj;aldkfja;lkda;lkjdf;alkjf;adkjf;alj<div align="center">
+=======
+ad;fja;dlfja;ldfja;lfkj;aldkfja;lkd<div align="center">
+>>>>>>> 18052bd (nothing)
 
 # Bagh Chal
 
