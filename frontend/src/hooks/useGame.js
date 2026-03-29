@@ -80,7 +80,7 @@ export function useGame() {
   }, [send, disconnect]);
 
   const isGameInProgress = useCallback(() => {
-    return gameState?.status !== "over" && gameState?.status !== "waiting";
+    return gameState?.status !== "over";
   }, [gameState]);
 
   return {
