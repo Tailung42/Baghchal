@@ -17,8 +17,6 @@ from .game_state import (
 )
 from .services import (
     async_update_game_state,
-    async_cleanup_game_states,
-    async_schedule_game_removal,
     async_store_game,
     get_user_by_username,
 )
@@ -38,7 +36,6 @@ __all__ = [
     "check_game_over",
     "apply_move",
     "async_update_game_state",
-    "async_cleanup_game_states",
     "async_schedule_game_removal",
     "async_store_game",
     "get_user_by_username",
