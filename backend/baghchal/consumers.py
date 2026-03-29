@@ -5,10 +5,10 @@ from django.contrib.auth.models import AnonymousUser
 from .redis import (
     async_get_game,
     async_set_game,
-    async_game_exists
+    async_game_exists,
+    async_delete_game,
 )
-# TODO: need to clean up game state at some point but when? 
-from .game_engine import async_update_game_state, async_cleanup_game_states
+from .game_engine import async_update_game_state
 
 
 
@@ -112,6 +112,11 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
                 if player == self.username:
                     game_state["player"][role] = ""
                     break
+
+            if not any(game_state["player"].values()):
+                await async_delete_game(self.room_group_name)
+                return
+
             await async_set_game(self.room_group_name, game_state)
             await self.channel_layer.group_send(
                 self.room_group_name,
