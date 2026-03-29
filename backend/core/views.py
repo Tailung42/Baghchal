@@ -14,9 +14,6 @@ from baghchal.game_engine import get_user_by_username
 
 
 
-@api_view(["GET"])
-def index(request):
-    return Response({"message": "api connected"})
 
 
 @api_view(["POST"])

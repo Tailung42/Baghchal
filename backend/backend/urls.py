@@ -16,9 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
+from datetime import datetime
+
+def health_check(request):
+    """
+    health check handler
+    """
+    return JsonResponse({
+        'status': 'healthy', 
+        'timestamp': str(datetime.now())
+    })
 
 urlpatterns = [
-    path('', include("core.urls")),
+    path('health/', health_check, name='health_check'),
     path('admin/', admin.site.urls),
     path('game/', include("baghchal.urls"))
 ]
