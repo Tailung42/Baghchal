@@ -183,4 +183,4 @@ def get_user(request, username):
     user = get_user_by_username(username)
     user_stats = get_user_stats(user)
 
-    return Response({json.dumps(user_stats)}, status=200)
+    return Response(user_stats, status=200)
