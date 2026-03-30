@@ -1,9 +1,11 @@
 import asyncio
 from datetime import datetime
-from ..redis import async_get_game, async_set_game, async_delete_game
-from .game_state import apply_move, check_game_over
+
 from baghchal.models import Game
 from core.models import User
+
+from ..redis import async_delete_game, async_get_game, async_set_game
+from .game_state import apply_move, check_game_over
 
 GAME_ID_LENGTH = 8
 

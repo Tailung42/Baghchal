@@ -1,5 +1,7 @@
 from django.db import models
+
 from core.models import User
+
 
 class Game(models.Model):
     WINNER_ROLE_CHOICES = [("goat", "Goat"), ("tiger", "Tiger")]

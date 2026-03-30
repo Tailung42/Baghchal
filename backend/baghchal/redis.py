@@ -2,8 +2,9 @@
 Game state management using Redis for persistence and multi-instance support.
 """
 import json
-import redis.asyncio as aioredis
 import os
+
+import redis.asyncio as aioredis
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 

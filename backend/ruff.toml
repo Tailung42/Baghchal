@@ -1,0 +1,9 @@
+line-length = 127
+indent-width = 4
+
+[lint]
+select = ["E", "F", "I"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

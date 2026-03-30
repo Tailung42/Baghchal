@@ -1,15 +1,18 @@
+import os
+
 from django.contrib.auth import authenticate
-from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
+from google.auth.transport import requests
+from google.oauth2 import id_token
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from baghchal.game_engine import get_user_by_username
+
 from .models import User
 from .serializers import UserSerializer
-from google.oauth2 import id_token
-from google.auth.transport import requests
-from rest_framework_simplejwt.tokens import RefreshToken
-import os
 from .user_stats import get_user_stats
-from baghchal.game_engine import get_user_by_username
 
 
 @api_view(["POST"])
