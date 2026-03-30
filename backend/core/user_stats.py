@@ -1,4 +1,5 @@
-from django.db.models import Q, Count, F
+from django.db.models import Q
+
 from baghchal.models import Game
 
 

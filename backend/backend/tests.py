@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
+
 class HealthCheckTests(TestCase):
     def test_health_check_endpoint(self):
         url = reverse('health_check')

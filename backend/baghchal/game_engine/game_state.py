@@ -2,8 +2,9 @@
 provides game state, validates and applies move
 """
 
-from .board import check_goat_win, check_tiger_win, get_mid_key
 import copy
+
+from .board import check_goat_win, check_tiger_win, get_mid_key
 
 
 def get_initial_game_state():

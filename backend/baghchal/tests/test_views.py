@@ -1,8 +1,10 @@
-from django.test import TestCase
 from unittest.mock import patch
-from core.models import User
-from django.urls import reverse
+
+from django.test import TestCase
 from rest_framework.test import APIClient
+
+from core.models import User
+
 
 class QuickMatchTestCase(TestCase):
 

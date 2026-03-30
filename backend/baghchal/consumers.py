@@ -1,14 +1,16 @@
-from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from urllib.parse import parse_qs
+
+from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
+
+from .game_engine import async_update_game_state
 from .redis import (
+    async_delete_game,
+    async_game_exists,
     async_get_game,
     async_set_game,
-    async_game_exists,
-    async_delete_game,
 )
-from .game_engine import async_update_game_state
 
 
 class AsyncGameConsumer(AsyncWebsocketConsumer):
@@ -94,7 +96,7 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
             elif message_type == "newMove":
                 await self.handle_new_move(message.get("move"))
 
-        except (json.JSONDecodeError, KeyError, ValueError) as e:
+        except (json.JSONDecodeError, KeyError, ValueError):
             await self.send(text_data=json.dumps(
                 {"message": {"type": "error", "error": "Invalid message format"}}
             ))

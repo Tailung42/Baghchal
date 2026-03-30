@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "./App.css";
 import Game from "./routes/Game";
 import Layout from "./routes/Layout";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
