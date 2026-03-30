@@ -11,7 +11,7 @@ urlpatterns = [
     path("guest-login/", views.guest_login),
     path("token/refresh/", TokenRefreshView.as_view()),
     path("auth/google", views.google_auth),
-    path("users/<str:username>/", views.get_user)
+    path("users/<str:username>/", views.user_stats)
 ]
 
 if settings.DEBUG:
