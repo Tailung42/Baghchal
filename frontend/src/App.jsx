@@ -11,9 +11,7 @@ import Rules from "./routes/Rules";
 import AuthModal from "./components/AuthModal";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
-const GOOGLE_CLIENT_ID =
-  "611135257481-5tv07uu56cf811lle2cdduubh43gu018.apps.googleusercontent.com";
-
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 function AppContent({ authModalOpen, setAuthModalOpen }) {
   const router = createBrowserRouter([
     {
