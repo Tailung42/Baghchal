@@ -14,7 +14,7 @@ django.setup()
 
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
-from baghchal.middleware import JWTAuthMiddleware
+from .middleware import JWTAuthMiddleware
 
 
 import baghchal.routing
