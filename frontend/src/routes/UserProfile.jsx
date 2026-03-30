@@ -219,14 +219,12 @@ export default function UserProfile() {
     userApi
       .getProfile(username)
       .then((res) => {
-        // backend returns an array with a JSON string as first element
-        const raw = res.data;
-        const parsed = Array.isArray(raw) ? JSON.parse(raw[0]) : raw;
-        setStats({ username, ...parsed });
+        const data = res.data;
+        setStats({ username, ...data});
       })
       .catch(() => setError("Could not load profile."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [username]);
 
   const isOwnProfile = username === currentUser;
 
