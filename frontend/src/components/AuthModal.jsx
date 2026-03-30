@@ -44,12 +44,17 @@ export default function AuthModal({ isOpen, onClose }) {
         onClose();
       }, 500);
     } catch (error) {
-      const errorMsg = error.response?.data?.error || error.message || "Authentication failed";
+      const errorMsg = getErrorMessage(error);
       setMessage(errorMsg);
       setMessageType("error");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleFailure = () => {
+    setMessage("Google authentication failed. Please try again.");
+    setMessageType("error");
   };
 
   const handleSubmit = async (e) => {
@@ -80,12 +85,40 @@ export default function AuthModal({ isOpen, onClose }) {
         }, 500);
       }
     } catch (error) {
-      const errorMsg = error.response?.data?.error || error.message || "An error occurred";
+      const errorMsg = getErrorMessage(error);
       setMessage(errorMsg);
       setMessageType("error");
     } finally {
       setLoading(false);
     }
+  };
+
+  const getErrorMessage = (error) => {
+    if (!error.response) {
+      return "Network error. Please check your connection.";
+    }
+    
+    const status = error.response.status;
+    const data = error.response.data;
+    
+    if (status >= 500) {
+      return "Server error. Please try again later.";
+    }
+    
+    if (typeof data === "string") {
+      return data;
+    }
+    
+    if (data.error) return data.error;
+    if (data.detail) return data.detail;
+    if (data.message) return data.message;
+    
+    if (data.errors) {
+      const firstError = Object.values(data.errors)[0];
+      return Array.isArray(firstError) ? firstError[0] : firstError;
+    }
+    
+    return "An error occurred. Please try again.";
   };
 
   return (
@@ -104,10 +137,7 @@ export default function AuthModal({ isOpen, onClose }) {
             <div className="w-full max-w-xs">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
-                onError={() => {
-                  setMessage("Google authentication failed");
-                  setMessageType("error");
-                }}
+                onFailure={handleGoogleFailure}
                 size="large"
                 text={mode === "login" ? "signin_with" : "signup_with"}
                 shape="rectangular"
