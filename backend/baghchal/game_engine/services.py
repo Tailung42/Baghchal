@@ -1,10 +1,16 @@
 import asyncio
 from datetime import datetime
-from ..redis import async_get_game, async_set_game, async_get_all_games, async_delete_game
+from ..redis import async_get_game, async_set_game, async_delete_game
 from .game_state import apply_move, check_game_over
 from baghchal.models import Game
 from core.models import User
 
+GAME_ID_LENGTH = 8
+
+class GameStatus:
+    WAITING = 'waiting'
+    ONGOING = 'ongoing'
+    OVER = 'over'
 
 async def async_update_game_state(room_name, move):
     game_state = await async_get_game(room_name)

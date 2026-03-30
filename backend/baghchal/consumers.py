@@ -11,12 +11,6 @@ from .redis import (
 from .game_engine import async_update_game_state
 
 
-
-class GameStatus:
-    WAITING = "waiting"
-    ONGOING = "ongoing"
-    OVER = "over"
-
 class AsyncGameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """

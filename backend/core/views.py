@@ -9,11 +9,7 @@ from google.auth.transport import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 import os
 from .user_stats import get_user_stats
-import json
 from baghchal.game_engine import get_user_by_username
-
-
-
 
 
 @api_view(["POST"])
@@ -25,14 +21,11 @@ def signup(request):
     avatar = request.FILES.get("avatar")
 
     if not (username and password and email):
-        print("incomplete data")
         return Response({"error": "incomplete data"}, status=400)
 
     if User.objects.filter(username=username).exists():
-        print("username already taken")
         return Response({"error": "username already taken"}, status=400)
     if User.objects.filter(email=email).exists():
-        print("email already registered")
         return Response({"error": "email already registered"}, status=400)
 
     user = User(username=username, email=email)
@@ -40,12 +33,10 @@ def signup(request):
     user.avatar = avatar
 
     if not user:
-        print("unable to signup")
         return Response({"error": "unable to signup"}, status=400)
     user.save()
     refresh = RefreshToken.for_user(user)
     serializer = UserSerializer(user, context={"request": request})
-    print("successfully signup")
     
     return Response({"user_data": serializer.data,
                      "access": str(refresh.access_token),
@@ -64,7 +55,6 @@ def login(request):
 
     user = authenticate(username=username, password=password)
     if user is None:
-        print("no user")
         return Response({"error": "user doesn't exist"}, status=400)
     
     refresh = RefreshToken.for_user(user)
@@ -97,7 +87,6 @@ def google_auth(request):
                 client_id,
                 clock_skew_in_seconds=30 # hopefully don't cause issue in production
             )
-            print("Verification successful!")
             
         except Exception as e:
             import traceback
@@ -142,10 +131,8 @@ def google_auth(request):
                         }, status=200)
     
     except ValueError as e:
-        print(f"ValueError: {str(e)}")
         return Response({"error": f"Invalid Google token: {str(e)}"}, status=400)
     except Exception as e:
-        print(f"Exception: {str(e)}")
         return Response({"error": f"Authentication failed: {str(e)}"}, status=500)
 
 @api_view(["POST"])

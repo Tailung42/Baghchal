@@ -19,6 +19,8 @@ from .services import (
     async_update_game_state,
     async_store_game,
     get_user_by_username,
+    GameStatus,
+    GAME_ID_LENGTH,
 )
 
 __all__ = [
@@ -39,4 +41,6 @@ __all__ = [
     "async_schedule_game_removal",
     "async_store_game",
     "get_user_by_username",
+    "GameStatus",
+    "GAME_ID_LENGTH"
 ]
