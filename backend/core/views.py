@@ -44,7 +44,7 @@ def signup(request):
         return Response({"error": "unable to signup"}, status=400)
     user.save()
     refresh = RefreshToken.for_user(user)
-    serializer = UserSerializer(user, request)
+    serializer = UserSerializer(user, context={"request": request})
     print("successfully signup")
     
     return Response({"user_data": serializer.data,
@@ -68,7 +68,7 @@ def login(request):
         return Response({"error": "user doesn't exist"}, status=400)
     
     refresh = RefreshToken.for_user(user)
-    serializer = UserSerializer(user, request)
+    serializer = UserSerializer(user, context={"request": request})
      
     return Response({"user_data": serializer.data,
                      "access": str(refresh.access_token),
@@ -133,7 +133,7 @@ def google_auth(request):
             user.save()
 
         # send user data for signup and login both 
-        serializer = UserSerializer(user, request)
+        serializer = UserSerializer(user, context={"request": request})
         refresh = RefreshToken.for_user(user) 
 
         return Response({"user_data": serializer.data,
