@@ -163,7 +163,7 @@ def guest_login(request):
 
 
 @api_view(["GET"])
-def get_user(request, username):
+def user_stats(request, username):
     if not username:
         return Response({"error":"Have not provided proper username"}, status=400)
     
