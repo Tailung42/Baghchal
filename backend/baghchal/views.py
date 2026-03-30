@@ -12,16 +12,8 @@ from .redis import (
     async_get_all_games,
     async_game_exists,
 )
-from .game_engine import get_initial_game_state
+from .game_engine import get_initial_game_state, GameStatus, GAME_ID_LENGTH
 
-GAME_ID_LENGTH = 8
-GAME_STATUS_WAITING = "waiting"
-GAME_STATUS_ONGOING = "ongoing"
-
-
-def index(request):
-    print("hello world")
-    return HttpResponse("<h1> hello, world <h1/>")
 
 
 # Game endpoints
@@ -78,7 +70,7 @@ async def join_game(request):
 
         game_state["game_id"] = room_group_name
 
-        if game_state["status"] == GAME_STATUS_ONGOING:
+        if game_state["status"] == GameStatus.ONGOING:
             return Response(
                 {"error": "Cannot join ongoing game as new player"}, status=400
             )
@@ -99,7 +91,7 @@ async def join_game(request):
         game_state["player"][available_role] = username
 
         if all(game_state["player"].values()):
-            game_state["status"] = GAME_STATUS_ONGOING
+            game_state["status"] = GameStatus.ONGOING
 
         asyncio.create_task(async_set_game(room_group_name, game_state))
 
@@ -157,7 +149,7 @@ async def quick_match(request):
         waiting_games = [
             (game_id, game_state)
             for game_id, game_state in all_games.items()
-            if game_state.get("status") == GAME_STATUS_WAITING
+            if game_state.get("status") == GameStatus.WAITING
         ]
 
         if waiting_games:
@@ -173,7 +165,7 @@ async def quick_match(request):
             if available_role:
                 game_state["player"][available_role] = username
                 if all(game_state["player"].values()):
-                    game_state["status"] = GAME_STATUS_ONGOING
+                    game_state["status"] = GameStatus.ONGOING
                 game_state["game_id"] = f"game_{game_id}"
                 asyncio.create_task(async_set_game(f"game_{game_id}", game_state))
 

@@ -3,6 +3,7 @@ provides game state, validates and applies move
 """
 
 from .board import check_goat_win, check_tiger_win, get_mid_key
+import copy
 
 
 def get_initial_game_state():
@@ -66,8 +67,6 @@ def check_game_over(game_state):
 
 
 def apply_move(game_state, move):
-    import copy
-
     new_state = copy.deepcopy(game_state)
     board = new_state["board"]
     current_player = new_state["currentPlayer"]
