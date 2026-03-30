@@ -25,11 +25,8 @@ async def async_update_game_state(room_name, move):
 
 
 async def async_store_game(game_id, game_state):
-    print(f"stored game: {game_id}")
-
     winner_role = game_state["winner"]
     dead_goats = game_state["deadGoatCount"]
-    
     goat_user = await asyncio.to_thread(get_user_by_username, game_state["player"]["goat"])
     tiger_user = await asyncio.to_thread(get_user_by_username, game_state["player"]["tiger"])
 
@@ -47,6 +44,6 @@ async def async_store_game(game_id, game_state):
 
 def get_user_by_username(username):
     try: 
-        user = User.objects.get(username=username)
+        return User.objects.get(username=username)
     except User.DoesNotExist:
         raise ValueError(f"Unable to get the user with username: {username}")
