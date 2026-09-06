@@ -55,6 +55,8 @@ async def archive_game(game_id: str, game_state: dict) -> Game:
         winner_role=winner_role,
         total_moves=len(game_state["history"]),
         goats_captured=dead_goats,
+        opponent_type=game_state.get("opponent_type", "human") or "human",
+        bot_difficulty=(game_state.get("bot") or {}).get("difficulty"),
         created_at=timezone.now(),
     )
     await asyncio.to_thread(game.save)

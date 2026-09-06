@@ -9,6 +9,7 @@ class Game(models.Model):
         ("goats_captured", "5 Goats Captured"),
         ("tigers_blocked", "All Tigers Blocked"),
     ]
+    OPPONENT_TYPE_CHOICES = [("human", "Human"), ("bot", "Bot")]
 
     game_id = models.CharField(primary_key=True, max_length=8, unique=True)
 
@@ -25,6 +26,14 @@ class Game(models.Model):
 
     total_moves = models.IntegerField(default=0)
     goats_captured = models.IntegerField(default=0)
+
+    # Whether the opponent was a human or the server-side bot, plus the bot
+    # difficulty when applicable (bot games archive like human games so user
+    # stats keep working).
+    opponent_type = models.CharField(
+        max_length=5, choices=OPPONENT_TYPE_CHOICES, default="human"
+    )
+    bot_difficulty = models.CharField(max_length=10, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

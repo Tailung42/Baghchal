@@ -34,6 +34,28 @@ async def create_game(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+async def start_bot_game(request):
+    """Create a game against the server-side bot"""
+    try:
+        username = request.user.username
+        if not username:
+            return Response({"error": "Username required"}, status=400)
+
+        game_id = await persistence_views.create_bot_game(
+            username,
+            player_role=request.data.get("player_role", "tiger"),
+            difficulty=request.data.get("difficulty", "medium"),
+            game_id_length=GAME_ID_LENGTH,
+        )
+        return Response({"game_id": game_id}, status=201)
+    except ValueError as e:
+        return Response({"error": str(e)}, status=400)
+    except Exception as e:
+        return Response({"error": f"Failed to create bot game: {str(e)}"}, status=500)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 async def join_game(request):
     """Join an existing game"""
     try:

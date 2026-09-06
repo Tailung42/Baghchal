@@ -16,6 +16,8 @@ import asyncio
 import random
 import uuid
 
+from baghchal.bot import BOT_USERNAME, DIFFICULTIES
+
 from .store import GameStateStore
 
 _store: GameStateStore | None = None
@@ -68,6 +70,48 @@ async def create_game(
     initial_state = _initial_game_state()
     initial_state["player"][player_role] = username
     initial_state["game_id"] = room_group_name
+
+    await asyncio.create_task(_set_game(room_group_name, initial_state))
+    return game_id
+
+
+async def create_bot_game(
+    username: str,
+    *,
+    player_role: str = "tiger",
+    difficulty: str = "medium",
+    game_id_length: int = 8,
+) -> str:
+    """
+    Create a game against the server-side bot and initialize it in the
+    live store.
+
+    The human takes ``player_role``; the bot fills the other role and the
+    game starts ``ongoing`` immediately (no waiting room). Bot metadata
+    lives inside the game state so the consumer can drive the bot's turns.
+    """
+    if not username:
+        raise ValueError("Username required")
+    if player_role not in ("tiger", "goat"):
+        raise ValueError("Invalid player role")
+    if difficulty not in DIFFICULTIES:
+        raise ValueError("Invalid difficulty")
+
+    game_id = str(uuid.uuid4())[:game_id_length]
+    room_group_name = f"game_{game_id}"
+
+    if await _game_exists(room_group_name):
+        raise ValueError("Game already exists")
+
+    bot_role = "goat" if player_role == "tiger" else "tiger"
+
+    initial_state = _initial_game_state()
+    initial_state["player"][player_role] = username
+    initial_state["player"][bot_role] = BOT_USERNAME
+    initial_state["game_id"] = room_group_name
+    initial_state["status"] = "ongoing"
+    initial_state["opponent_type"] = "bot"
+    initial_state["bot"] = {"role": bot_role, "difficulty": difficulty}
 
     await asyncio.create_task(_set_game(room_group_name, initial_state))
     return game_id

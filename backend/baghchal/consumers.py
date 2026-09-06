@@ -5,10 +5,12 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
 
 from . import gateway
+from .bot import BOT_USERNAME
+from .bot.integration import maybe_trigger_bot_reply
 from .gateway.integration import attach_session
 from .gateway.managers import game_gateway
 from .persistence.play import configure_store as configure_play_store
-from .persistence.play import disconnect_game, execute_leave, execute_move
+from .persistence.play import disconnect_game, execute_leave, execute_move, load_game
 from .persistence.store import GameStateStore, configure_store
 
 _store = GameStateStore()
@@ -116,6 +118,17 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
 
         await self._session.broadcast_event("gameState", game_state)
 
+        # If the bot is on move (e.g. the human chose tigers, so the goat bot
+        # opens), have the bot reply right away.
+        await maybe_trigger_bot_reply(
+            game_state,
+            game_id=self.room_group_name,
+            get_game=load_game,
+            apply_and_broadcast=lambda move: self._apply_move_and_broadcast(
+                BOT_USERNAME, move
+            ),
+        )
+
     def _broadcast(self, event: dict):
         return self._channel_group_send(self.room_group_name, event)
 
@@ -195,17 +208,27 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
             {"username": username, "role": role},
         )
 
-    async def _handle_move(self, payload):
+    async def _apply_move_and_broadcast(
+        self,
+        username: str,
+        payload: dict,
+    ) -> dict | None:
+        """
+        Apply a move through the normal pipeline and broadcast the result.
+
+        Used by the human's ``move`` command and by the bot's replies, so
+        both sides persist and broadcast identically. Returns the new game
+        state, or None when the move was rejected.
+        """
         new_game_state = await execute_move(
             self.room_group_name,
-            self.username,
+            username,
             payload,
             archive_game=self._archive_game,
         )
 
         if new_game_state is None:
-            await self.send_error(gateway.errors.INVALID_MOVE)
-            return
+            return None
 
         if new_game_state.get("status") == "over":
             # Broadcast the final board first so every client sees the last
@@ -218,9 +241,26 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
                     "endReason": _end_reason_for(new_game_state),
                 },
             )
-            return
+            return new_game_state
 
         await self._session.broadcast_event("gameState", new_game_state)
+        return new_game_state
+
+    async def _handle_move(self, payload):
+        new_game_state = await self._apply_move_and_broadcast(self.username, payload)
+        if new_game_state is None:
+            await self.send_error(gateway.errors.INVALID_MOVE)
+            return
+
+        # If the move leaves the bot to move, let the bot reply.
+        await maybe_trigger_bot_reply(
+            new_game_state,
+            game_id=self.room_group_name,
+            get_game=load_game,
+            apply_and_broadcast=lambda move: self._apply_move_and_broadcast(
+                BOT_USERNAME, move
+            ),
+        )
 
     async def _archive_game(self, game_id: str, game_state: dict):
         from .persistence.archival import archive_game as _archive
