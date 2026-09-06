@@ -9,7 +9,8 @@ later without keeping Redis entries alive forever.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+
+from django.utils import timezone
 
 from baghchal.models import Game
 from core.models import User
@@ -54,7 +55,7 @@ async def archive_game(game_id: str, game_state: dict) -> Game:
         winner_role=winner_role,
         total_moves=len(game_state["history"]),
         goats_captured=dead_goats,
-        created_at=datetime.now(),
+        created_at=timezone.now(),
     )
     await asyncio.to_thread(game.save)
     return game

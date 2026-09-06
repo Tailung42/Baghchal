@@ -183,11 +183,12 @@ export const WebSocketProvider = ({ children }) => {
       return;
     }
 
-    const eventPayload = data.event?.payload;
-    const serverEvent = data.event?.type || data.message?.type;
+    // Server envelope: {"event": "<type>", "payload": {...}}
+    const eventPayload = data.payload;
+    const serverEvent = data.event;
 
-    if (data.event?.type === "gameState") {
-      const newGameState = data.event.payload.game_state;
+    if (serverEvent === "gameState") {
+      const newGameState = eventPayload?.game_state;
       if (newGameState) {
         if (optimisticState && !compareGameStates(optimisticState, newGameState)) {
           console.warn("Server state differs from optimistic state. Reconciliation needed.");
@@ -224,6 +225,7 @@ export const WebSocketProvider = ({ children }) => {
     }
 
     if (serverEvent === "gameOver") {
+      setWinner(eventPayload?.winner || "");
       setWinnerModalOpen(true);
       return;
     }
@@ -242,6 +244,7 @@ export const WebSocketProvider = ({ children }) => {
   };
 
   const [winnerModalOpen, setWinnerModalOpen] = useState(false);
+  const [winner, setWinner] = useState("");
 
   // Cleanup on unmount
   useEffect(() => {
@@ -270,6 +273,7 @@ export const WebSocketProvider = ({ children }) => {
         clearOptimisticState,
         winnerModalOpen,
         setWinnerModalOpen,
+        winner,
       }}
     >
       {children}

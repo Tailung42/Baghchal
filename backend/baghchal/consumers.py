@@ -5,22 +5,15 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
 
 from . import gateway
-from .persistence.play import disconnect_game, execute_leave, execute_move, load_game
-from . import gateway
+from .gateway.integration import attach_session
+from .gateway.managers import game_gateway
+from .persistence.play import configure_store as configure_play_store
+from .persistence.play import disconnect_game, execute_leave, execute_move
 from .persistence.store import GameStateStore, configure_store
-from .persistence.play import (
-    execute_leave,
-    execute_move,
-    load_game,
-    configure_store as configure_play_store,
-)
 
 _store = GameStateStore()
 configure_store(_store)
 configure_play_store(_store)
-
-
-from .gateway import integration  # noqa: E402
 
 
 def _gateway_error_for_code(code: str) -> gateway.errors.GatewayError:
@@ -57,7 +50,7 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
     Game rule logic and persistence orchestration do not live here.
     """
 
-    _gateway: gateway.GameGateway
+    _gateway = game_gateway
 
     async def connect(self):
         query = parse_qs(self.scope["query_string"].decode())
@@ -72,7 +65,13 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
         self._session = None
 
         try:
-            await self.accept()
+            # Echo the requested subprotocol (the JWT access token) back to
+            # the client, otherwise browsers reject the handshake with
+            # "non-empty Sec-WebSocket-Protocol header but no response".
+            subprotocols = self.scope.get("subprotocols", [])
+            await self.accept(
+                subprotocol=subprotocols[0] if subprotocols else None
+            )
             await self.setup_session()
         except Exception as e:
             await self.close_with_error(str(e))
@@ -85,11 +84,6 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
             raise gateway.errors.CONNECTION_ERROR
 
         self.room_group_name = f"game_{self.game_id}"
-        self._gateway = gateway.game_gateway
-
-        self._broadcast = lambda event: self._channel_group_send(
-            self.room_group_name, event
-        )
 
         if not await _store.game_exists(self.room_group_name):
             raise gateway.errors.GAME_NOT_FOUND
@@ -106,7 +100,7 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
             raise gateway.errors.NOT_IN_GAME
 
         role = self._player_role(game_state)
-        self._session = integration.attach_session(
+        self._session = attach_session(
             self._gateway,
             self.room_group_name,
             self._broadcast,
@@ -115,7 +109,15 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
             role=role,
         )
 
+        # Join the Channels group so broadcasts reach this connection.
+        await self.channel_layer.group_add(
+            self.room_group_name, self.channel_name
+        )
+
         await self._session.broadcast_event("gameState", game_state)
+
+    def _broadcast(self, event: dict):
+        return self._channel_group_send(self.room_group_name, event)
 
     async def _channel_group_send(self, group_name: str, event: dict):
         await self.channel_layer.group_send(group_name, event)
@@ -144,11 +146,17 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
             return
 
         message = parsed.get("message")
-        if not isinstance(message, dict):
-            await self.send_error(gateway.errors.INVALID_MESSAGE)
-            return
+        if isinstance(message, dict):
+            # Legacy envelope: {"message": {"type": ..., "move": ...}}
+            envelope = self._from_user_message_static(message)
+        else:
+            # New envelope: {"command": ..., "payload": ...}
+            try:
+                envelope = gateway.commands.parse_client_envelope(parsed)
+            except ValueError:
+                await self.send_error(gateway.errors.INVALID_MESSAGE)
+                return
 
-        envelope = self._from_user_message_static(message)
         command = envelope["command"]
         payload = envelope["payload"]
 
@@ -173,14 +181,11 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
             await self.send_error(gateway.errors.INVALID_MESSAGE)
 
     async def _handle_leave(self):
-        game_state = await execute_leave(
+        await execute_leave(
             self.room_group_name,
             self.username,
             on_left=self._emit_player_left,
         )
-
-        if game_state is None:
-            return
 
     async def _emit_player_left(self, game_state: dict, username: str, role: str | None):
         if role is None:
@@ -203,6 +208,9 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
             return
 
         if new_game_state.get("status") == "over":
+            # Broadcast the final board first so every client sees the last
+            # move and a game state marked as over; then announce the winner.
+            await self._session.broadcast_event("gameState", new_game_state)
             await self._session.broadcast_event(
                 "gameOver",
                 {
@@ -223,17 +231,21 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
         if not hasattr(self, "room_group_name"):
             return
 
-        conn = self._session.remove_connection(self.channel_name)
+        session = getattr(self, "_session", None)
+        if session is None:
+            return
+
+        conn = session.remove_connection(self.channel_name)
         if conn and conn.username:
-            await self._session.broadcast_event(
+            await session.broadcast_event(
                 "playerDisconnected",
                 {"username": conn.username, "role": conn.role},
             )
 
             await disconnect_game(
                 self.room_group_name,
-                session_is_empty=self._session.is_empty,
-                session_player_count=self._session.player_count,
+                session_is_empty=session.is_empty,
+                session_player_count=session.player_count,
             )
 
     async def disconnect(self, close_code):
@@ -243,15 +255,43 @@ class AsyncGameConsumer(AsyncWebsocketConsumer):
                 self.room_group_name, self.channel_name
             )
 
-    async def send_game_state(self, event):
-        try:
-            await self.send(
-                text_data=json.dumps(
-                    {"message": {"type": "update", "game_state": event["game_state"]}}
-                )
+    # ------------------------------------------------------------------
+    # Channel-layer event handlers.
+    #
+    # The gateway session broadcasts to the room group with
+    # {"type": <event_type>, "payload": ...}. Channels dispatches group
+    # events to consumer methods by exact type name (dots replaced by
+    # underscores), so these handlers must match the event types emitted
+    # by the session: gameState, playerLeft, playerDisconnected, gameOver.
+    # ------------------------------------------------------------------
+
+    async def gameState(self, event):
+        await self.send(
+            text_data=json.dumps(
+                {"event": "gameState", "payload": {"game_state": event["payload"]}}
             )
-        except Exception as e:
-            print(f"Error sending game state: {e}")
+        )
+
+    async def playerLeft(self, event):
+        await self.send(
+            text_data=json.dumps(
+                {"event": "playerLeft", "payload": event["payload"]}
+            )
+        )
+
+    async def playerDisconnected(self, event):
+        await self.send(
+            text_data=json.dumps(
+                {"event": "playerDisconnected", "payload": event["payload"]}
+            )
+        )
+
+    async def gameOver(self, event):
+        await self.send(
+            text_data=json.dumps(
+                {"event": "gameOver", "payload": event["payload"]}
+            )
+        )
 
     async def send_error(self, error):
         await self.send(

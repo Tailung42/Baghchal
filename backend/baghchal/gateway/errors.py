@@ -12,9 +12,17 @@ from typing import Any
 
 
 @dataclass(frozen=True)
-class GatewayError:
+class GatewayError(Exception):
+    """
+    A domain error that can be raised (``raise GAME_NOT_FOUND``) and also
+    mapped to a response envelope via :meth:`to_response`.
+    """
+
     code: str
     message: str
+
+    def __str__(self) -> str:
+        return self.message
 
     def to_response(self, *, ok: bool = False) -> dict[str, Any]:
         return {"ok": ok, "error_code": self.code, "message": self.message}

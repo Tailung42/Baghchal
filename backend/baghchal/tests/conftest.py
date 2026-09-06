@@ -31,10 +31,14 @@ def _make_test_settings():
         DATABASES={
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",
-                "NAME": ":memory:",
+                # Shared-cache in-memory DB so every thread (including the
+                # worker threads asgiref uses for sync ORM calls) sees the
+                # same migrated schema instead of a fresh empty database.
+                "NAME": "file::memory:?cache=shared&mode=memory&uri=true",
             }
         },
         DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
+        AUTH_USER_MODEL="core.User",  # match production so JWT/guest flows use the real model
         ROOT_URLCONF="backend.urls",
         USE_TZ=True,
         ALLOWED_HOSTS=["testserver"],
@@ -65,6 +69,11 @@ def _make_test_settings():
             "django.contrib.auth.middleware.AuthenticationMiddleware",
             "django.contrib.messages.middleware.MessageMiddleware",
         ],
+        CHANNEL_LAYERS={
+            "default": {
+                "BACKEND": "channels.layers.InMemoryChannelLayer",
+            }
+        },
         LOGGING_CONFIG=None,
     )
 

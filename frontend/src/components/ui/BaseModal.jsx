@@ -4,11 +4,14 @@ const BaseModal = ({ isOpen, onClose, title, children }) => {
   return (
     <div
       className="fixed inset-0 bg-black/85 flex items-center justify-center z-50 p-5"
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       <div
         className="bg-bg-surface p-10 rounded-xl max-w-lg w-full border border-border-muted max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">

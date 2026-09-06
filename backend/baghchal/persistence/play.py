@@ -111,7 +111,9 @@ async def execute_move(
 
     Returns the updated game state, or None when the move was not applied.
     """
-    from baghchal.game_engine import async_update_game_state as _async_update_game_state
+    from baghchal.game_engine.services import (
+        async_update_game_state as _async_update_game_state,
+    )
 
     if store is None:
         store = await _resolve_store()

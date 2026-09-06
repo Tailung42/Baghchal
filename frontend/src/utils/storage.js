@@ -7,14 +7,27 @@ import { generateUsername } from "unique-username-generator";
 
 const _authStorage = {
   getToken: () => {
-    const access = JSON.parse(localStorage.getItem(ACCESS_TOKEN_KEY));
-    const refresh = JSON.parse(localStorage.getItem(REFRESH_TOKEN_KEY));
-    return [access, refresh];
+    const parseToken = (key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        // Corrupt stored value (e.g. literal "undefined" written by an old
+        // bug). Clean it up so it cannot keep breaking API calls.
+        localStorage.removeItem(key);
+        return null;
+      }
+    };
+    return [
+      parseToken(ACCESS_TOKEN_KEY),
+      parseToken(REFRESH_TOKEN_KEY),
+    ];
   },
 
   setToken: (access, refresh) => {
-    localStorage.setItem(ACCESS_TOKEN_KEY, JSON.stringify(access));
-    localStorage.setItem(REFRESH_TOKEN_KEY, JSON.stringify(refresh));
+    if (access) localStorage.setItem(ACCESS_TOKEN_KEY, JSON.stringify(access));
+    if (refresh) localStorage.setItem(REFRESH_TOKEN_KEY, JSON.stringify(refresh));
   },
 
   setUser: (user) => {

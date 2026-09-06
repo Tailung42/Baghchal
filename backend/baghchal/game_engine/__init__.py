@@ -39,15 +39,6 @@ except Exception:
     GAME_ID_LENGTH = 8  # type: ignore[assignment]
 
 
-async def async_update_game_state(room_name: str, move: dict) -> dict | None:
-    """
-    Thin wrapper used by legacy consumers until they are fully migrated.
-    """
-    from .services import async_update_game_state as _real_async_update_game_state
-
-    return await _real_async_update_game_state(room_name, move)
-
-
 __all__ = [
     "get_mid_key",
     "get_possible_tiger_moves",

@@ -5,5 +5,12 @@ description = "Bagh Chal game backend with Django, DRF, Channels, and Redis"
 requires-python = ">=3.10"
 dependencies = []
 
+[project.optional-dependencies]
+dev = [
+    "fakeredis",
+    "pytest",
+    "pytest-asyncio",
+]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

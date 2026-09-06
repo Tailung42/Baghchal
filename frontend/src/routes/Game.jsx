@@ -31,7 +31,7 @@ const Game = () => {
     updateOptimisticState,
   } = useGame();
 
-  const { winnerModalOpen, setWinnerModalOpen } = useWebSocket();
+  const { winnerModalOpen, setWinnerModalOpen, winner } = useWebSocket();
 
   const navigate = useNavigate();
   let { gameId } = useParams();
@@ -74,11 +74,17 @@ const Game = () => {
     if (!gameState) return;
 
     if (gameState.status === "over") {
-      setWinner(gameState.winner);
       setModalOpen(true);
       handleGameEnd();
     }
   }, [gameState, handleGameEnd]);
+
+  useEffect(() => {
+    if (winnerModalOpen) {
+      setModalOpen(true);
+      handleGameEnd();
+    }
+  }, [winnerModalOpen, handleGameEnd]);
 
   useEffect(() => {
     if (!gameState?.newPosition || gameState.newPosition === gameState.previousPosition) return;
@@ -158,7 +164,7 @@ const Game = () => {
       </div>
 
       <WinnerModal
-        winner={gameState?.winner || ""}
+        winner={winner || gameState?.winner || ""}
         isOpen={modalOpen}
         onClick={handleWinnerModelClick}
       />

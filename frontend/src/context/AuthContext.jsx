@@ -24,13 +24,25 @@ export function AuthProvider({ children }) {
 
     if (user) {
       finish({ ...auth, user, guest });
-    } else if (guest) {
+    } else if (guest && authStorage.getToken()[0]) {
+      // Stored guest with a usable access token — trust the saved session.
       finish({ ...auth, user: null, guest });
-    } else {
+    } else if (guest) {
+      // Stored guest identity but no usable token (fresh or corrupted
+      // storage). Re-authenticate as guest; loginAsGuest persists the tokens.
       loginAsGuest().then((guestUser) => {
         if (!cancelled) {
           authStorage.setGuest(guestUser);
-          authStorage.setToken(guestUser.access, guestUser.refresh);
+          finish({ user: null, guest: guestUser });
+        }
+      });
+    } else {
+      loginAsGuest().then((guestUser) => {
+        if (!cancelled) {
+          // loginAsGuest already persisted the tokens; guestUser is only
+          // the user_data payload (no access/refresh fields). Re-storing
+          // undefined here would overwrite the real tokens with "undefined".
+          authStorage.setGuest(guestUser);
           finish({ user: null, guest: guestUser });
         }
       });
