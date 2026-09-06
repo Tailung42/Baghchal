@@ -8,7 +8,7 @@ export function useGame() {
     joinGame: joinGameHTTP,
     rejoinGame: rejoinGameHTTP,
     quickMatch: quickMatchHTTP,
-    send,
+    startBotGame: startBotGameHTTP,
     sendCommand,
     disconnect,
     gameState,
@@ -67,6 +67,19 @@ export function useGame() {
     }
   }, [quickMatchHTTP]);
 
+  const startBotGame = useCallback(
+    async (playerRole, difficulty) => {
+      try {
+        const gameId = await startBotGameHTTP(playerRole, difficulty);
+        gameStorage.setGame(gameId);
+      } catch (error) {
+        console.error("Failed to start bot game:", error);
+        throw error;
+      }
+    },
+    [startBotGameHTTP],
+  );
+
   const sendMove = useCallback(
     (move) => {
       sendCommand("move", move);
@@ -92,6 +105,7 @@ export function useGame() {
     joinGame,
     rejoinGame,
     quickMatch,
+    startBotGame,
     sendMove,
     exitGame,
     isGameInProgress,

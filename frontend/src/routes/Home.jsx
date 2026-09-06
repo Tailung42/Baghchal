@@ -17,8 +17,9 @@ export default function Home() {
   const [createError, setCreateError] = useState("");
   const [joinError, setJoinError] = useState("");
   const [quickError, setQuickError] = useState("");
+  const [botError, setBotError] = useState("");
 
-  const { createGame, joinGame, quickMatch } = useGame();
+  const { createGame, joinGame, quickMatch, startBotGame } = useGame();
 
   const openModal = useCallback(
     (mode) => {
@@ -27,6 +28,7 @@ export default function Home() {
       setJoinError("");
       setCreateError("");
       setQuickError("");
+      setBotError("");
       setLoadingMessage(null);
     },
     [],
@@ -41,6 +43,8 @@ export default function Home() {
       setLoadingMessage({ title: "Joining game...", subtext: "Connecting you to the game room." });
     } else if (mode === "quick") {
       setLoadingMessage({ title: "Finding a match...", subtext: "Looking for another player to join the game." });
+    } else if (mode === "bot") {
+      setLoadingMessage({ title: "Starting bot game...", subtext: "Waking up the bot and setting up the board." });
     }
   }, []);
 
@@ -119,8 +123,25 @@ export default function Home() {
     [quickMatch, setLoading],
   );
 
+  const handleBot = useCallback(
+    async (playerRole, difficulty) => {
+      setLoading("bot");
+      setBotError("");
+      try {
+        await startBotGame(playerRole, difficulty);
+        // The WebSocket `gameState` event navigates to /game/:id once the
+        // server responds, so the loading overlay stays up until then.
+      } catch (error) {
+        setBotError(error.response?.data?.error || "Failed to start bot game");
+        setIsLoadingGame(false);
+        setLoadingMessage(null);
+      }
+    },
+    [startBotGame, setLoading],
+  );
+
   // When a create/join fails, re-open the modal so the user can see the
-  // error and retry. Quick-match errors show inline on the page instead.
+  // error and retry. Quick-match and bot errors show inline on the page.
   useEffect(() => {
     if (
       (createError && gameMode === "create") ||
@@ -166,11 +187,16 @@ export default function Home() {
                 <span>⚡</span>
                 <span className="text-xl">Quick Match</span>
               </PrimaryButton>
+
+              <SecondaryButton onClick={() => openModal("bot")}>
+                <span>🤖</span>
+                <span className="text-xl">Play vs Bot</span>
+              </SecondaryButton>
             </div>
 
-            {quickError && (
+            {(quickError || botError) && (
               <p className="text-red-400 text-sm text-center max-w-sm mx-auto">
-                {quickError}
+                {quickError || botError}
               </p>
             )}
 
@@ -228,12 +254,14 @@ export default function Home() {
           setJoinError("");
           setCreateError("");
           setQuickError("");
+          setBotError("");
           setLoadingMessage(null);
         }}
         mode={gameMode}
         isLoading={isLoadingGame}
         onCreate={handleCreate}
         onJoin={handleJoin}
+        onBot={handleBot}
         joinError={joinError}
         createError={createError}
       />
@@ -248,6 +276,7 @@ const GameModal = ({
   isLoading,
   onCreate,
   onJoin,
+  onBot,
   joinError,
   createError,
 }) => {
@@ -255,6 +284,7 @@ const GameModal = ({
   const [gameId, setGameId] = useState(null);
   const [joinId, setJoinId] = useState("");
   const [playerRole, setPlayerRole] = useState("tiger");
+  const [botDifficulty, setBotDifficulty] = useState("medium");
   const [copied, setCopied] = useState(false);
 
   const generateGameId = () => {
@@ -283,6 +313,7 @@ const GameModal = ({
   const titleConfig = {
     create: "🎯Create Game",
     join: "🤝Join Game",
+    bot: "🤖 Play vs Bot",
   };
 
   if (!isOpen) return null;
@@ -356,6 +387,53 @@ const GameModal = ({
             className={!joinId.trim() && !isLoading ? "opacity-50 cursor-not-allowed" : ""}
           >
             Join Game
+          </PrimaryButton>
+        </div>
+      )}
+
+      {/* Bot mode */}
+      {mode === "bot" && (
+        <div className="space-y-6">
+          <p className="text-gray-400 mb-5">
+            Play against the server bot. Pick your side and how hard it
+            should fight:
+          </p>
+
+          <div>
+            <label className="block text-gray-300 mb-2 text-sm font-semibold">
+              Choose your role:
+            </label>
+            <select
+              value={playerRole}
+              onChange={(e) => setPlayerRole(e.target.value)}
+              className="w-full p-3 bg-[var(--color-bg-surface-dark)] border border-[var(--color-border-light)] text-gray-200 rounded-lg focus:outline-none focus:border-[var(--color-primary)] transition-all"
+            >
+              <option value="tiger">🐅 Tiger (Hunter)</option>
+              <option value="goat">🐐 Goat (Defender)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-gray-300 mb-2 text-sm font-semibold">
+              Bot difficulty:
+            </label>
+            <select
+              value={botDifficulty}
+              onChange={(e) => setBotDifficulty(e.target.value)}
+              className="w-full p-3 bg-[var(--color-bg-surface-dark)] border border-[var(--color-border-light)] text-gray-200 rounded-lg focus:outline-none focus:border-[var(--color-primary)] transition-all"
+            >
+              <option value="easy">Easy — makes quick decisions</option>
+              <option value="medium">Medium — balanced play</option>
+              <option value="hard">Hard — sees moves ahead</option>
+            </select>
+          </div>
+
+          <PrimaryButton
+            onClick={() => onBot(playerRole, botDifficulty)}
+            loading={isLoading}
+            disabled={isLoading}
+          >
+            {isLoading ? "Starting..." : "Start Bot Game"}
           </PrimaryButton>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGame } from "../hooks/useGame";
 import { useUsername } from "../hooks/useUsername";
@@ -116,6 +116,15 @@ const Game = () => {
 
   const displayState = optimisticState || gameState;
 
+  // Bot games carry { role, difficulty } metadata in the game state.
+  const botInfo = displayState?.bot;
+  const botRole = botInfo?.role;
+  const isBotGame = Boolean(botInfo);
+  const isBotTurn =
+    isBotGame &&
+    displayState?.status !== "over" &&
+    displayState?.currentPlayer === botRole;
+
   if (!isConnected || !displayState) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-[var(--color-bg-dark)]">
@@ -139,6 +148,9 @@ const Game = () => {
             tigerPlayer={displayState.player["tiger"]}
             currentPlayer={displayState.player[displayState.currentPlayer]}
             gameState={displayState}
+            isBotGame={isBotGame}
+            botDifficulty={botInfo?.difficulty || null}
+            botThinking={isBotTurn}
           />
         </div>
 

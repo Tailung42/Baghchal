@@ -136,6 +136,22 @@ export const WebSocketProvider = ({ children }) => {
     }
   }, [connectWebSocket]);
 
+  const startBotGameHTTP = useCallback(
+    async (playerRole, difficulty) => {
+      try {
+        const response = await gameApi.startBot(playerRole, difficulty);
+        const gameId = response.data.game_id;
+        setGameId(gameId);
+        connectWebSocket(gameId);
+        return gameId;
+      } catch (error) {
+        console.error("Error starting bot game:", error);
+        throw error;
+      }
+    },
+    [connectWebSocket],
+  );
+
   const sendCommand = useCallback((command, payload = {}) => {
     const envelope = JSON.stringify({ command, payload });
     if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -262,6 +278,7 @@ export const WebSocketProvider = ({ children }) => {
         joinGame: joinGameHTTP,
         rejoinGame: rejoinGameHTTP,
         quickMatch: quickMatchHTTP,
+        startBotGame: startBotGameHTTP,
         send,
         sendCommand,
         disconnect,

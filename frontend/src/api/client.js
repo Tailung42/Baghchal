@@ -45,6 +45,9 @@ export const gameApi = {
   rejoin: (gameId) => api.post("game/rejoin/", { game_id: gameId }),
 
   quickMatch: () => api.post("game/quick-match/"),
+
+  startBot: (playerRole, difficulty) =>
+    api.post("game/bot/", { player_role: playerRole, difficulty }),
 };
 
 export const userApi = {
