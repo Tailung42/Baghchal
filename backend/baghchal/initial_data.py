@@ -13,7 +13,7 @@ from baghchal.game_engine import get_initial_game_state
 # Coordinate keys use the internal "row-col" format, not user-facing "1-1" style.
 EMPTY_BOARD_KEYS = [
     "0-1", "0-2", "0-3",
-    "1-0", "1-2", "1-3", "1-4",
+    "1-0", "1-1", "1-2", "1-3", "1-4",
     "2-0", "2-1", "2-2", "2-3", "2-4",
     "3-0", "3-1", "3-2", "3-3", "3-4",
     "4-1", "4-2", "4-3",

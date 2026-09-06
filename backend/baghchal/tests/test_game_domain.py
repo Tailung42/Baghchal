@@ -55,12 +55,29 @@ def test_displace_move_requires_piece_to_belong_to_current_player():
         status="ongoing",
         game_id="game_1",
     )
-    state["board"]["0-0"] = "tiger"
+    # Tigers may slide as soon as it is their turn, regardless of goat
+    # placement phase.
+    state["currentPlayer"] = "tiger"
+    state["unusedGoat"] = 0
+    state["phase"] = "displacement"
+
+    # Claiming the wrong piece for the move is invalid.
     move = make_displace_move("0-0", "0-1", "goat")
     assert validate_move(state, move) is False
 
     move = make_displace_move("0-0", "0-1", "tiger")
     assert validate_move(state, move) is True
+
+
+def test_out_of_turn_move_is_rejected():
+    state = make_initial_state(
+        player=player_state(goat="alice", tiger="bob"),
+        status="ongoing",
+        game_id="game_1",
+    )
+    # It is the goat's turn (placement), so a tiger slide is out of turn.
+    move = make_displace_move("0-0", "0-1", "tiger")
+    assert validate_move(state, move) is False
 
 
 def _clear_corner(square):

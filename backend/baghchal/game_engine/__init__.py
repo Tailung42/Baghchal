@@ -26,6 +26,9 @@ from .game_state import (
     is_valid_move,
     to_user_coord,
 )
+from .movegen import generate_moves
+from .evaluate import INF, evaluate_position
+from .search import search_best_move
 
 try:
     from .services import (
@@ -51,6 +54,10 @@ __all__ = [
     "get_initial_game_state",
     "to_user_coord",
     "is_valid_move",
+    "generate_moves",
+    "evaluate_position",
+    "search_best_move",
+    "INF",
     "check_game_over",
     "apply_move",
     "async_update_game_state",

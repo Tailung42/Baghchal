@@ -5,6 +5,7 @@ provides game state, validates and applies move
 import copy
 
 from .board import check_goat_win, check_tiger_win, get_mid_key
+from .movegen import generate_moves
 
 
 def get_initial_game_state():
@@ -34,20 +35,42 @@ def to_user_coord(key):
     return f"{r + 1}-{c + 1}"
 
 
+def _canonical_move(move, game_state):
+    """
+    Normalize a candidate move for comparison against generated moves.
+
+    The frontend sends ``fromKey: null`` on place moves and omits
+    ``pieceType`` when it is undefined, while older payloads omit
+    ``currentPlayer`` entirely. Normalizing all of these to one shape keeps
+    validation strict without being brittle about key presence. Returns a
+    hashable tuple so generated moves can live in a set.
+    """
+    move_type = move.get("moveType")
+    return (
+        move_type,
+        move.get("currentPlayer") or game_state.get("currentPlayer"),
+        None if move_type == "place" else move.get("fromKey"),
+        move.get("toKey"),
+    )
+
+
 def is_valid_move(game_state, move):
-    board = game_state["board"]
-    move_type = move["moveType"]
-    from_key = move.get("fromKey")
-    to_key = move.get("toKey")
-    current_player = move.get("currentPlayer")
+    """
+    A move is valid if and only if it is one of the generated legal moves.
 
-    if move_type == "place":
-        return to_key not in board
+    This enforces turn ownership, phase rules, adjacency, and capture
+    semantics in one place: whatever ``generate_moves`` produces is legal
+    and nothing else is.
+    """
+    if not isinstance(move, dict):
+        return False
+    if move.get("moveType") not in ("place", "displace", "capture"):
+        return False
 
-    if move_type in ("displace", "capture"):
-        return board.get(from_key) == current_player and to_key not in board
-
-    return False
+    candidate = _canonical_move(move, game_state)
+    return candidate in {
+        _canonical_move(m, game_state) for m in generate_moves(game_state)
+    }
 
 
 def check_game_over(game_state):
@@ -68,10 +91,13 @@ def check_game_over(game_state):
 
 
 def apply_move(game_state, move):
+    if not isinstance(move, dict):
+        return None
+
     new_state = copy.deepcopy(game_state)
     board = new_state["board"]
     current_player = new_state["currentPlayer"]
-    move_type = move["moveType"]
+    move_type = move.get("moveType")
     from_key = move.get("fromKey")
     to_key = move.get("toKey")
 
