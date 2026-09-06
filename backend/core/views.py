@@ -8,7 +8,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from baghchal.game_engine import get_user_by_username
+from baghchal.persistence.archival import _get_user_by_username
 
 from .models import User
 from .serializers import UserSerializer
@@ -170,7 +170,7 @@ def user_stats(request, username):
     if not username:
         return Response({"error":"Have not provided proper username"}, status=400)
     
-    user = get_user_by_username(username)
+    user = _get_user_by_username(username)
     user_stats = get_user_stats(user)
 
     return Response(user_stats, status=200)

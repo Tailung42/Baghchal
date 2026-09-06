@@ -13,14 +13,32 @@ export function AuthProvider({ children }) {
 
   // # load stored user on mount
   useEffect(() => {
+    let cancelled = false;
+
+    const finish = (nextAuth) => {
+      if (!cancelled) {
+        setAuth(nextAuth);
+        setIsLoading(false);
+      }
+    };
+
     if (user) {
-      setAuth((prev) => ({ ...prev, user: user, guest: guest }));
+      finish({ ...auth, user, guest });
     } else if (guest) {
-      setAuth((prev) => ({ ...prev, user: null, guest: guest }));
+      finish({ ...auth, user: null, guest });
     } else {
-      loginAsGuest();
+      loginAsGuest().then((guestUser) => {
+        if (!cancelled) {
+          authStorage.setGuest(guestUser);
+          authStorage.setToken(guestUser.access, guestUser.refresh);
+          finish({ user: null, guest: guestUser });
+        }
+      });
     }
-    setIsLoading(false);
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = async (username, password) => {
@@ -40,12 +58,34 @@ export function AuthProvider({ children }) {
 
   const loginAsGuest = async () => {
     const guestId = generateUsername();
-    const promise = await authApi.guestLogin(guestId);
-    const data = promise.data;
-    const guest_user = data.user_data;
-    authStorage.setGuest(guest_user);
-    authStorage.setToken(data.access, data.refresh);
-    setAuth((prev) => ({ ...prev, user: null, guest: guest_user }));
+
+    // Show a provisional guest identity right away so the UI does not wait
+    // on the network call just to display a username.
+    const provisionalGuest = {
+      username: guestId,
+      is_guest: true,
+    };
+
+    authStorage.setGuest(provisionalGuest);
+    setAuth((prev) => ({ ...prev, user: null, guest: provisionalGuest }));
+
+    try {
+      const response = await authApi.guestLogin(guestId);
+      const data = response.data;
+      const guest_user = data.user_data;
+
+      authStorage.setGuest(guest_user);
+      authStorage.setToken(data.access, data.refresh);
+
+      setAuth((prev) => ({ ...prev, user: null, guest: guest_user }));
+
+      return guest_user;
+    } catch (error) {
+      // If the backend call fails, keep the provisional guest identity so
+      // the app is still usable with a generated username.
+      console.warn("[Auth] guest login failed, keeping provisional guest:", error);
+      return provisionalGuest;
+    }
   };
 
   const handleLoginResponse = (response) => {

@@ -1,3 +1,14 @@
+"""
+Game engine public API.
+
+This package is intentionally importable without Django being configured
+for lightweight scripts and tests that only need board rules and game
+state helpers.
+
+If Django is available and configured, the full service layer will also
+be importable through the existing import chain.
+"""
+
 from .board import (
     CAPTURE_CONNECTIONS,
     MOVE_CONNECTIONS,
@@ -15,13 +26,27 @@ from .game_state import (
     is_valid_move,
     to_user_coord,
 )
-from .services import (
-    GAME_ID_LENGTH,
-    GameStatus,
-    async_store_game,
-    async_update_game_state,
-    get_user_by_username,
-)
+
+try:
+    from .services import (
+        GAME_ID_LENGTH,
+        GameStatus,
+        async_update_game_state,
+    )
+except Exception:
+    GameStatus = None  # type: ignore[assignment]
+    async_update_game_state = None  # type: ignore[assignment]
+    GAME_ID_LENGTH = 8  # type: ignore[assignment]
+
+
+async def async_update_game_state(room_name: str, move: dict) -> dict | None:
+    """
+    Thin wrapper used by legacy consumers until they are fully migrated.
+    """
+    from .services import async_update_game_state as _real_async_update_game_state
+
+    return await _real_async_update_game_state(room_name, move)
+
 
 __all__ = [
     "get_mid_key",
@@ -38,9 +63,6 @@ __all__ = [
     "check_game_over",
     "apply_move",
     "async_update_game_state",
-    "async_schedule_game_removal",
-    "async_store_game",
-    "get_user_by_username",
     "GameStatus",
-    "GAME_ID_LENGTH"
+    "GAME_ID_LENGTH",
 ]

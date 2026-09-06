@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = os.environ.get("SECRET_KEY", "abcdefghijklmnopqrstuvwxyz")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False") == "True"
@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     "core",
     "corsheaders",
     "adrf",
-    ]
+]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -72,8 +72,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "https://baghchal-snowy.vercel.app",
     "https://baghchal-bhij.onrender.com",
-    "https://bagh-chal.onrender.com"
-
+    "https://bagh-chal.onrender.com",
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -89,14 +88,12 @@ CORS_ALLOW_HEADERS = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=7),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
 }
 
 ROOT_URLCONF = "backend.urls"

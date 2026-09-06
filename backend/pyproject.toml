@@ -1,0 +1,9 @@
+[project]
+name = "baghchal-backend"
+version = "0.1.0"
+description = "Bagh Chal game backend with Django, DRF, Channels, and Redis"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

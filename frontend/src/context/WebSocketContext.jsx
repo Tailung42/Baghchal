@@ -97,7 +97,6 @@ export const WebSocketProvider = ({ children }) => {
         const data = response.data;
         console.log("Joining response: ", response.data);
         setGameId(data.game_id);
-        // setGameState(data.game_state);
         connectWebSocket(data.game_id);
         return data.game_id;
       } catch (error) {
@@ -114,7 +113,6 @@ export const WebSocketProvider = ({ children }) => {
         const response = await gameApi.rejoin(gameId);
         const data = response.data;
         setGameId(data.game_id);
-        // setGameState(data.game_state);
         connectWebSocket(data.game_id);
         return data.game_id;
       } catch (error) {
@@ -137,6 +135,15 @@ export const WebSocketProvider = ({ children }) => {
       throw error;
     }
   }, [connectWebSocket]);
+
+  const sendCommand = useCallback((command, payload = {}) => {
+    const envelope = JSON.stringify({ command, payload });
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(envelope);
+    } else {
+      console.warn("WebSocket is not connected. Cannot send command:", command);
+    }
+  }, []);
 
   const send = useCallback((message) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -168,41 +175,73 @@ export const WebSocketProvider = ({ children }) => {
   };
 
   const handleMessage = (event) => {
-    const data = JSON.parse(event.data);
-    const newGameState = data.message?.game_state;
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch (err) {
+      console.warn("WebSocket: failed to parse message", err);
+      return;
+    }
 
-    if (newGameState) {
-      if (optimisticState && !compareGameStates(optimisticState, newGameState)) {
-        // TODO: Handle state reconciliation - server state differs from optimistic state
-        console.warn("Server state differs from optimistic state. Reconciliation needed.");
-      } else {
-        clearOptimisticState();
+    const eventPayload = data.event?.payload;
+    const serverEvent = data.event?.type || data.message?.type;
+
+    if (data.event?.type === "gameState") {
+      const newGameState = data.event.payload.game_state;
+      if (newGameState) {
+        if (optimisticState && !compareGameStates(optimisticState, newGameState)) {
+          console.warn("Server state differs from optimistic state. Reconciliation needed.");
+        } else {
+          clearOptimisticState();
+        }
+
+        setGameState(newGameState);
+
+        const idToUse = (
+          newGameState.game_id ||
+          gameIdRef.current ||
+          gameId ||
+          ""
+        ).replace("game_", "");
+
+        if (idToUse && !window.location.pathname.includes("/game/")) {
+          navigate(`/game/${idToUse}`);
+        }
       }
+      return;
+    }
 
-      setGameState(newGameState);
+    if (serverEvent === "error") {
+      console.warn("WebSocket server error:", eventPayload?.code, eventPayload?.message);
+      return;
+    }
 
-      const idToUse = (
-        newGameState.game_id ||
-        gameIdRef.current ||
-        gameId ||
-        ""
-      ).replace("game_", "");
-
-      if (idToUse && !window.location.pathname.includes("/game/")) {
-        navigate(`/game/${idToUse}`);
+    if (serverEvent === "playerLeft" || serverEvent === "playerDisconnected") {
+      if (eventPayload?.username === authStorage.getUsername()) {
+        disconnect();
       }
+      return;
+    }
+
+    if (serverEvent === "gameOver") {
+      setWinnerModalOpen(true);
+      return;
     }
   };
 
   const handleClose = () => {
     setIsConnected(false);
     console.log("WebSocket closed");
+    setWinnerModalOpen(false);
   };
 
   const handleError = (error) => {
     console.error("WebSocket error:", error);
     setIsConnected(false);
+    setWinnerModalOpen(false);
   };
+
+  const [winnerModalOpen, setWinnerModalOpen] = useState(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -221,6 +260,7 @@ export const WebSocketProvider = ({ children }) => {
         rejoinGame: rejoinGameHTTP,
         quickMatch: quickMatchHTTP,
         send,
+        sendCommand,
         disconnect,
         gameState,
         isConnected,
@@ -228,6 +268,8 @@ export const WebSocketProvider = ({ children }) => {
         optimisticState,
         updateOptimisticState,
         clearOptimisticState,
+        winnerModalOpen,
+        setWinnerModalOpen,
       }}
     >
       {children}

@@ -5,7 +5,7 @@ const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
 import { generateUsername } from "unique-username-generator";
 
-export const authStorage = {
+const _authStorage = {
   getToken: () => {
     const access = JSON.parse(localStorage.getItem(ACCESS_TOKEN_KEY));
     const refresh = JSON.parse(localStorage.getItem(REFRESH_TOKEN_KEY));
@@ -62,6 +62,17 @@ export const authStorage = {
     localStorage.removeItem(GUEST_STORAGE_KEY);
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
+  },
+};
+
+export const authStorage = {
+  ..._authStorage,
+  getUsername: () => {
+    const user = _authStorage.getUser();
+    const guest = _authStorage.getGuest();
+    if (user?.username) return user.username;
+    if (guest?.username) return guest.username;
+    return null;
   },
 };
 

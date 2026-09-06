@@ -13,6 +13,7 @@ import GameStatusIndicator from "../components/GameStatusIndicator";
 import { WinnerModal } from "../components/modals/WinnerModal";
 import { WaitingModal } from "../components/modals/WaitingModal";
 import { LeaveConfirmationModal } from "../components/modals/LeaveConfirmationModal";
+import { useWebSocket } from "../context/WebSocketContext";
 
 const Game = () => {
   const { username } = useUsername();
@@ -30,11 +31,12 @@ const Game = () => {
     updateOptimisticState,
   } = useGame();
 
+  const { winnerModalOpen, setWinnerModalOpen } = useWebSocket();
+
   const navigate = useNavigate();
   let { gameId } = useParams();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [winner, setWinner] = useState("");
   const [lastMoveKey, setLastMoveKey] = useState(null);
 
   const { playMove } = useGameSounds();
@@ -101,6 +103,7 @@ const Game = () => {
 
   const handleWinnerModelClick = () => {
     setModalOpen(false);
+    setWinnerModalOpen(false);
     exitGame();
     navigate("/");
   };
@@ -155,7 +158,7 @@ const Game = () => {
       </div>
 
       <WinnerModal
-        winner={winner}
+        winner={gameState?.winner || ""}
         isOpen={modalOpen}
         onClick={handleWinnerModelClick}
       />

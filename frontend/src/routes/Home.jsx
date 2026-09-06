@@ -1,18 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useGame } from "../hooks/useGame";
 import PrimaryButton from "../components/ui/PrimaryButton";
 import SecondaryButton from "../components/ui/SecondaryButton";
 import BaseModal from "../components/ui/BaseModal";
+import LoadingOverlay from "../components/ui/LoadingOverlay";
 import board from "../assets/images/board.png";
+
+const QUICK_MATCH_TIMEOUT_MS = 90_000;
+const JOIN_GAME_TIMEOUT_MS = 60_000;
 
 export default function Home() {
   const [gameModalOpen, setGameModalOpen] = useState(false);
   const [gameMode, setGameMode] = useState("");
+  const [isLoadingGame, setIsLoadingGame] = useState(false);
 
-  const handleClick = (mode) => {
-    setGameMode(mode);
-    setGameModalOpen(true);
-  };
+  const handleClick = useCallback(
+    (mode) => {
+      setGameMode(mode);
+      setGameModalOpen(true);
+    },
+    [],
+  );
 
   return (
     <div className=" md:pl-10 font-sans bg-bg-dark text-text-light min-h-screen overflow-x-hidden">
@@ -93,16 +101,19 @@ export default function Home() {
         </div>
       </div>
 
+      <LoadingOverlay isOpen={isLoadingGame} />
       <GameModal
         isOpen={gameModalOpen}
         onClose={() => setGameModalOpen(false)}
         mode={gameMode}
+        isLoading={isLoadingGame}
+        setIsLoading={setIsLoadingGame}
       />
     </div>
   );
 }
 
-const GameModal = ({ isOpen, onClose, mode }) => {
+const GameModal = ({ isOpen, onClose, mode, isLoading, setIsLoading }) => {
   const GameIdLength = 8;
   const { createGame, joinGame, quickMatch } = useGame();
   const [gameId, setGameId] = useState(null);
@@ -126,21 +137,62 @@ const GameModal = ({ isOpen, onClose, mode }) => {
     }
   }, [mode]);
 
-  const handleCreate = () => {
-    createGame(gameId, playerRole);
-  };
-
-  const handleJoin = async () => {
+  const handleCreate = async () => {
+    setIsLoading(true);
     try {
-      await joinGame(joinId.trim());
-      setJoinError("");
-    } catch (error) {
-      setJoinError(error.response?.data?.error || "Failed to join game");
+      await createGame(gameId, playerRole);
+    } finally {
+      setIsLoading(false);
+      onClose();
     }
   };
 
-  const handleQuick = () => {
-    quickMatch();
+  const handleJoin = async () => {
+    setIsLoading(true);
+    setJoinError("");
+    try {
+      await Promise.race([
+        joinGame(joinId.trim()),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error("JOIN_GAME_TIMEOUT")),
+            JOIN_GAME_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+    } catch (error) {
+      if (error.message === "JOIN_GAME_TIMEOUT") {
+        setJoinError("Took too long to join. Please try again.");
+      } else {
+        setJoinError(error.response?.data?.error || "Failed to join game");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleQuick = async () => {
+    setIsLoading(true);
+    try {
+      await Promise.race([
+        quickMatch(),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error("QUICK_MATCH_TIMEOUT")),
+            QUICK_MATCH_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+    } catch (error) {
+      if (error.message === "QUICK_MATCH_TIMEOUT") {
+        setJoinError("Took too long to find a match. Please try again.");
+      } else {
+        throw error;
+      }
+    } finally {
+      setIsLoading(false);
+      onClose();
+    }
   };
 
   const handleCopy = async (e) => {
@@ -200,7 +252,9 @@ const GameModal = ({ isOpen, onClose, mode }) => {
             </select>
           </div>
 
-          <PrimaryButton onClick={handleCreate}>Create Game Room</PrimaryButton>
+          <PrimaryButton onClick={handleCreate} loading={isLoading} disabled={isLoading}>
+            {isLoading ? "Creating..." : "Create Game Room"}
+          </PrimaryButton>
         </div>
       )}
 
@@ -221,6 +275,7 @@ const GameModal = ({ isOpen, onClose, mode }) => {
 
           <PrimaryButton
             onClick={handleJoin}
+            loading={isLoading}
             className={!joinId.trim() ? "opacity-50 cursor-not-allowed" : ""}
           >
             Join Game
@@ -231,7 +286,6 @@ const GameModal = ({ isOpen, onClose, mode }) => {
       {/* Quick mode  */}
       {mode === "quick" && (
         <div className="text-center py-10">
-          <div className="w-12 h-12 border-4 border-[#3a3835] border-t-[#f95e5e] rounded-full animate-spin mx-auto mb-5"></div>
           <p className="text-gray-400 mb-2">Looking for a quick match...</p>
           <p className="text-gray-500 text-sm">
             We'll match you with another player shortly

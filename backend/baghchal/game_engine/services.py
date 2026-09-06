@@ -1,10 +1,6 @@
 import asyncio
-from datetime import datetime
+from typing import Any, Awaitable, Callable
 
-from baghchal.models import Game
-from core.models import User
-
-from ..redis import async_delete_game, async_get_game, async_set_game
 from .game_state import apply_move, check_game_over
 
 GAME_ID_LENGTH = 8
@@ -14,44 +10,40 @@ class GameStatus:
     ONGOING = 'ongoing'
     OVER = 'over'
 
-async def async_update_game_state(room_name, move):
-    game_state = await async_get_game(room_name)
+
+async def async_update_game_state(
+    room_name: str,
+    move: dict[str, Any],
+    *,
+    store_get: Callable[[str], Awaitable[dict[str, Any] | None]] = None,
+    store_set: Callable[[str, dict[str, Any]], Awaitable[bool]] = None,
+    store_delete: Callable[[str], Awaitable[bool]] = None,
+    archive_game: Callable[[str, dict[str, Any]], Awaitable[Any]] = None,
+) -> dict[str, Any] | None:
+    """
+    Apply a move to the live game state and persist the result.
+
+    This helper no longer owns Redis or ORM directly. Callers pass in the
+    persistence callbacks they want used, which makes this usable by both the
+    legacy redis-based path and the new persistence/store path.
+    """
+    get_game = store_get or (lambda key: None)  # type: ignore[misc]
+    set_game = store_set or (lambda key, state: True)  # type: ignore[misc]
+    delete_game = store_delete or (lambda key: True)  # type: ignore[misc]
+
+    game_state = await get_game(room_name)
     if not game_state:
         return None
-    
+
     new_game_state = apply_move(game_state, move)
     if new_game_state is None:
         return None
 
     if check_game_over(new_game_state):
-        asyncio.create_task(async_store_game(room_name, new_game_state))
-        asyncio.create_task(async_delete_game(room_name))
+        if archive_game is not None:
+            asyncio.create_task(archive_game(room_name, new_game_state))
+        asyncio.create_task(delete_game(room_name))
     else:
-        asyncio.create_task(async_set_game(room_name, new_game_state))
+        asyncio.create_task(set_game(room_name, new_game_state))
 
     return new_game_state
-
-
-async def async_store_game(game_id, game_state):
-    winner_role = game_state["winner"]
-    dead_goats = game_state["deadGoatCount"]
-    goat_user = await asyncio.to_thread(get_user_by_username, game_state["player"]["goat"])
-    tiger_user = await asyncio.to_thread(get_user_by_username, game_state["player"]["tiger"])
-
-    game = Game(
-        game_id=game_id,
-        goat_player=goat_user,
-        tiger_player=tiger_user,
-        winner_role=winner_role,
-        total_moves=len(game_state["history"]),
-        goats_captured=dead_goats,
-        created_at=datetime.now()
-    )
-    await asyncio.to_thread(game.save)
-
-
-def get_user_by_username(username):
-    try: 
-        return User.objects.get(username=username)
-    except User.DoesNotExist:
-        raise ValueError(f"Unable to get the user with username: {username}")

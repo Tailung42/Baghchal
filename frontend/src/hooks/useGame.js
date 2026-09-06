@@ -9,6 +9,7 @@ export function useGame() {
     rejoinGame: rejoinGameHTTP,
     quickMatch: quickMatchHTTP,
     send,
+    sendCommand,
     disconnect,
     gameState,
     isConnected,
@@ -68,16 +69,16 @@ export function useGame() {
 
   const sendMove = useCallback(
     (move) => {
-      send(JSON.stringify({ message: { type: "newMove", move } }));
+      sendCommand("move", move);
     },
-    [send],
+    [sendCommand],
   );
 
   const exitGame = useCallback(() => {
     gameStorage.removeGame();
-    send(JSON.stringify({ message: { type: "exitGame" } }));
+    sendCommand("leave");
     disconnect();
-  }, [send, disconnect]);
+  }, [sendCommand, disconnect]);
 
   const isGameInProgress = useCallback(() => {
     return gameState?.status !== "over";
